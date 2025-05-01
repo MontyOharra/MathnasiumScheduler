@@ -1,0 +1,81 @@
+import { Student, Center } from "@/types";
+
+const center: Center = {
+  id: 1,
+  name: "Main Center",
+};
+
+export const students: Student[] = [
+  {
+    id: 1,
+    center,
+    firstName: "Emma",
+    lastName: "Davis",
+    gradeLevel: "3",
+    isHomeworkHelp: false,
+    isActive: true,
+  },
+  {
+    id: 2,
+    center,
+    firstName: "Liam",
+    lastName: "Miller",
+    gradeLevel: "7",
+    isHomeworkHelp: true,
+    isActive: true,
+  },
+  {
+    id: 3,
+    center,
+    firstName: "Olivia",
+    lastName: "Wilson",
+    gradeLevel: "Algebra 1",
+    isHomeworkHelp: false,
+    isActive: true,
+  },
+  {
+    id: 4,
+    center,
+    firstName: "Noah",
+    lastName: "Moore",
+    gradeLevel: "5",
+    isHomeworkHelp: true,
+    isActive: true,
+  },
+  {
+    id: 5,
+    center,
+    firstName: "Ava",
+    lastName: "Taylor",
+    gradeLevel: "Geometry",
+    isHomeworkHelp: false,
+    isActive: true,
+  },
+  {
+    id: 6,
+    center,
+    firstName: "Ethan",
+    lastName: "Anderson",
+    gradeLevel: "AP Calculus AB",
+    isHomeworkHelp: false,
+    isActive: true,
+  },
+  {
+    id: 7,
+    center,
+    firstName: "Sophia",
+    lastName: "Thomas",
+    gradeLevel: "2",
+    isHomeworkHelp: true,
+    isActive: true,
+  },
+  {
+    id: 8,
+    center,
+    firstName: "Mason",
+    lastName: "Jackson",
+    gradeLevel: "Algebra 2",
+    isHomeworkHelp: false,
+    isActive: true,
+  },
+];
