@@ -54,7 +54,7 @@ export default function SchedulesTable({
                 {formatDate(schedule.scheduleDate)}
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                {schedule.sessions.length}
+                {0}
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                 {formatDate(schedule.dateLastModified)}
