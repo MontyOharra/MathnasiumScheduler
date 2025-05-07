@@ -1,6 +1,6 @@
 "use client";
 
-import { Schedule } from "@/types";
+import { Schedule } from "@/types/main";
 import { format } from "date-fns";
 import {
   PencilIcon,
@@ -34,13 +34,13 @@ export default function SchedulesTable({
               Date
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase tracking-wider">
-              Sessions
+              Template
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase tracking-wider">
               Last Edited
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-red-500 uppercase tracking-wider">
-              Template
+              Added By
             </th>
             <th className="px-4 py-3 text-right text-xs font-medium text-red-500 uppercase tracking-wider">
               Actions
@@ -60,7 +60,7 @@ export default function SchedulesTable({
                 {formatDate(schedule.dateLastModified)}
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                {schedule.template.name}
+                {schedule.addedBy.firstName} {schedule.addedBy.lastName}
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end space-x-3">

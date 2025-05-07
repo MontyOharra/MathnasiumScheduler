@@ -1,4 +1,4 @@
-import { Student, Center } from "@/types";
+import { Student, Center } from "@/types/main";
 
 const center: Center = {
   id: 1,

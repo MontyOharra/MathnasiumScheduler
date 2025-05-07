@@ -19,6 +19,12 @@
 
 # production
 /build
+/dist
+
+# Electron
+/main/**/*.js
+/main/**/*.js.map
+/dist_electron
 
 # misc
 .DS_Store
@@ -39,3 +45,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# SQLite databases
+*.db
+*.db-journal
