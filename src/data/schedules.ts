@@ -1,4 +1,4 @@
-import { Schedule, User, Center } from "@/types";
+import { Schedule, User, Center } from "@/types/main";
 import { scheduleTemplates } from "./schedule_templates";
 
 const center: Center = {

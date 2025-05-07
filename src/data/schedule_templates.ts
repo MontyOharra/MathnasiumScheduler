@@ -3,7 +3,7 @@ import {
   WeeklyScheduleTemplateWeekday,
   Center,
   Weekday,
-} from "@/types";
+} from "@/types/main";
 
 const center: Center = {
   id: 1,

@@ -99,13 +99,13 @@
    /** stored as “HH:mm” or a Date clipped to 1970-01-01 - pick your poison */
    startTime: string | Date;
    endTime: string | Date;
+   numColumns: number;
  };
  
  export type WeeklyScheduleTemplate = {
    id: string;              // UUID
    center: Center;
    name: string;
-   numPods: number;
    isDefault: boolean;
    intervalLength: number;  // minutes
    weekdayDetails: WeeklyScheduleTemplateWeekday[];
@@ -142,6 +142,6 @@
    student: Student;
    timeStart: Date;
    timeEnd: Date;
-   podNumber: number;
+   columnNumber: number;
  };
  

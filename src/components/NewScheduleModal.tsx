@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { WeeklyScheduleTemplate } from "@/types";
+import { WeeklyScheduleTemplate } from "@/types/main";
 import { scheduleTemplates } from "@/data/schedule_templates";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 

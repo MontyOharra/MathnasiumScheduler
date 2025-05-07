@@ -3,32 +3,47 @@
 import NewScheduleButton from "@/components/NewScheduleButton";
 import ExpandableScheduleTable from "@/components/ExpandableScheduleTable";
 import { schedules } from "@/data/schedules";
-import { format } from "date-fns";
+import { Schedule } from "@/types/main";
+import { useState, useEffect } from "react";
 
 export default function SchedulesPage() {
-  const handleEdit = (schedule: any) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [schedulesData, setSchedulesData] = useState<Schedule[]>([]);
+
+  useEffect(() => {
+    // In a real app, you would fetch data from your API or database
+    // For now, just use the mock data
+    setSchedulesData(schedules || []);
+    setIsLoaded(true);
+  }, []);
+
+  const handleEdit = (schedule: Schedule) => {
     console.log("Edit schedule:", schedule);
     // TODO: Implement edit functionality
   };
 
-  const handlePrint = (schedule: any) => {
+  const handlePrint = (schedule: Schedule) => {
     console.log("Print schedule:", schedule);
     // TODO: Implement print functionality
   };
 
-  const handleDelete = (schedule: any) => {
+  const handleDelete = (schedule: Schedule) => {
     console.log("Delete schedule:", schedule);
     // TODO: Implement delete functionality
   };
 
   // Filter schedules by date
   const today = new Date();
-  const pastSchedules = schedules.filter(
-    (schedule) => schedule.scheduleDate < today
+  const pastSchedules = schedulesData.filter(
+    (schedule: Schedule) => new Date(schedule.scheduleDate) < today
   );
-  const upcomingSchedules = schedules.filter(
-    (schedule) => schedule.scheduleDate >= today
+  const upcomingSchedules = schedulesData.filter(
+    (schedule: Schedule) => new Date(schedule.scheduleDate) >= today
   );
+
+  if (!isLoaded) {
+    return <div>Loading schedules...</div>;
+  }
 
   return (
     <div className="w-full max-w-full">

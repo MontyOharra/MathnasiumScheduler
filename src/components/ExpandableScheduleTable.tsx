@@ -1,6 +1,6 @@
 "use client";
 
-import { Schedule } from "@/types";
+import { Schedule } from "@/types/main";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import SchedulesTable from "./SchedulesTable";
