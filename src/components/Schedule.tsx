@@ -1,24 +1,47 @@
 import React from "react";
-import { Student, Instructor, Cell as CellType } from "../types";
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  createColumnHelper,
+} from "@tanstack/react-table";
+import {
+  Student,
+  Instructor,
+  Cell as CellType,
+  WeeklyScheduleTemplate,
+  WeeklyScheduleTemplateWeekday,
+  SessionRow,
+} from "@/types/main";
 import Cell from "./Cell";
 
 interface ScheduleProps {
+  template: WeeklyScheduleTemplate;
+  weekday: WeeklyScheduleTemplateWeekday;
+  sessions: SessionRow[];
   students: Student[];
   instructors: Instructor[];
-  timeStart: number; // in minutes from midnight (e.g., 330 for 5:30 AM)
-  timeEnd: number; // in minutes from midnight (e.g., 730 for 12:10 PM)
-  timeInterval: number; // in minutes (e.g., 30)
   onCellChange: (cell: CellType) => void;
 }
 
 const Schedule: React.FC<ScheduleProps> = ({
+  template,
+  weekday,
+  sessions,
   students,
   instructors,
-  timeStart,
-  timeEnd,
-  timeInterval,
   onCellChange,
 }) => {
+  // Parse time strings to minutes from midnight
+  const parseTimeToMinutes = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const timeStart = parseTimeToMinutes(weekday.startTime);
+  const timeEnd = parseTimeToMinutes(weekday.endTime);
+  const timeInterval = template.intervalLength;
+
   // Calculate number of rows based on time range and interval
   const totalMinutes = timeEnd - timeStart;
   const numRows = Math.ceil(totalMinutes / timeInterval);
@@ -31,77 +54,78 @@ const Schedule: React.FC<ScheduleProps> = ({
     return `${hours}:${mins.toString().padStart(2, "0")}`;
   });
 
-  return (
-    <div
-      className="schedule"
-      style={{ display: "flex", flexDirection: "column" }}
-    >
-      <div style={{ display: "flex", borderBottom: "1px solid #ccc" }}>
-        <div style={{ width: "100px", padding: "8px", fontWeight: "bold" }}>
-          Time
-        </div>
-        {students.map((student, index) => (
-          <div
-            key={student.id}
-            style={{
-              flex: 1,
-              padding: "8px",
-              borderLeft: "1px solid #ccc",
-              fontWeight: "bold",
-            }}
-          >
-            {student.firstName} {student.lastName}
-          </div>
-        ))}
-      </div>
+  // Create column helper
+  const columnHelper = createColumnHelper<{
+    time: string;
+    cells: { id: number }[];
+  }>();
 
-      {timeLabels.map((time, rowIndex) => (
-        <div
-          key={time}
-          style={{ display: "flex", borderBottom: "1px solid #ccc" }}
-        >
-          <div style={{ width: "100px", padding: "8px" }}>{time}</div>
-          {students.map((student) => (
-            <div
-              key={`${student.id}-${time}`}
-              style={{
-                flex: 1,
-                borderLeft: "1px solid #ccc",
-                padding: "4px",
-              }}
-            >
-              <Cell
-                student={student}
-                instructors={instructors}
-                onInstructorChange={(instructor) => {
-                  onCellChange({
-                    id: rowIndex * students.length + student.id,
-                    center: student.center,
-                    scheduleId: "", // This should be provided by the parent component
-                    instructor,
-                    student,
-                    timeStart: new Date(
-                      0,
-                      0,
-                      0,
-                      Math.floor(timeStart / 60),
-                      timeStart % 60
-                    ),
-                    timeEnd: new Date(
-                      0,
-                      0,
-                      0,
-                      Math.floor(timeEnd / 60),
-                      timeEnd % 60
-                    ),
-                    podNumber: 1, // This should be provided by the parent component
-                  });
-                }}
-              />
-            </div>
+  // Define columns
+  const columns = [
+    columnHelper.accessor("time", {
+      header: "Time",
+      cell: (info) => info.getValue(),
+    }),
+    // Create columns based on weekday.numColumns
+    ...Array.from({ length: weekday.numColumns }, (_, i) =>
+      columnHelper.accessor((row) => row.cells[i], {
+        id: `column-${i + 1}`,
+        header: `Column ${i + 1}`,
+        cell: () => null, // Empty cell for now
+      })
+    ),
+  ];
+
+  // Prepare data for the table
+  const data = timeLabels.map((time, rowIndex) => ({
+    time,
+    cells: Array.from({ length: weekday.numColumns }, (_, i) => ({
+      id: rowIndex * weekday.numColumns + i,
+    })),
+  }));
+
+  // Create table instance
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  return (
+    <div>
+      <div className="flex flex-row justify-between">
+        {" "}
+        {/* Header*/}
+        <div>Weekday, 01/01/1970</div>
+        <button>import</button>
+      </div>
+      <table>
+        <thead>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <th key={header.id}>
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+                </th>
+              ))}
+            </tr>
           ))}
-        </div>
-      ))}
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.map((row) => (
+            <tr key={row.id}>
+              {row.getVisibleCells().map((cell) => (
+                <td key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

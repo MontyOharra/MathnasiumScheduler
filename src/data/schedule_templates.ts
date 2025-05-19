@@ -1,60 +1,71 @@
 import {
   WeeklyScheduleTemplate,
   WeeklyScheduleTemplateWeekday,
-  Center,
-  Weekday,
 } from "@/types/main";
-
-const center: Center = {
-  id: 1,
-  name: "Main Center",
-};
+import { weekdays } from "./static-data/weekdays";
 
 const createWeekdayDetail = (
-  weekday: Weekday,
+  weekdayName: string,
   startTime: string,
   endTime: string
 ): WeeklyScheduleTemplateWeekday => ({
   templateId: "", // Will be set after template creation
-  center,
-  weekday,
+  weekdayId:
+    weekdays.find((w) => w.name.toLowerCase() === weekdayName.toLowerCase())
+      ?.id || 0,
   startTime,
   endTime,
+  numColumns: 4,
 });
 
 export const scheduleTemplates: WeeklyScheduleTemplate[] = [
   {
     id: "template-1",
-    center,
-    name: "Standard Afternoon Schedule",
-    numPods: 4,
+    centerId: 0,
+    name: "Spring Schedule",
     isDefault: true,
     intervalLength: 30,
-    weekdayDetails: [
-      createWeekdayDetail("monday", "15:00", "19:00"),
-      createWeekdayDetail("tuesday", "15:00", "19:00"),
-      createWeekdayDetail("wednesday", "15:00", "19:00"),
-      createWeekdayDetail("thursday", "15:00", "19:00"),
-      createWeekdayDetail("friday", "15:00", "19:00"),
-      createWeekdayDetail("saturday", "09:00", "13:00"),
-      createWeekdayDetail("sunday", "09:00", "13:00"),
-    ],
   },
   {
     id: "template-2",
-    center,
-    name: "Extended Hours Schedule",
-    numPods: 6,
+    centerId: 0,
+    name: "Summer Schedule",
     isDefault: false,
     intervalLength: 30,
-    weekdayDetails: [
-      createWeekdayDetail("monday", "14:00", "20:00"),
-      createWeekdayDetail("tuesday", "14:00", "20:00"),
-      createWeekdayDetail("wednesday", "14:00", "20:00"),
-      createWeekdayDetail("thursday", "14:00", "20:00"),
-      createWeekdayDetail("friday", "14:00", "20:00"),
-      createWeekdayDetail("saturday", "08:00", "14:00"),
-      createWeekdayDetail("sunday", "08:00", "14:00"),
-    ],
   },
 ];
+
+export const scheduleTemplateWeekdays: WeeklyScheduleTemplateWeekday[] = [
+  // Spring Schedule (template-1) weekdays
+  createWeekdayDetail("Monday", "15:30", "19:30"),
+  createWeekdayDetail("Tuesday", "15:30", "19:30"),
+  createWeekdayDetail("Wednesday", "15:30", "19:30"),
+  createWeekdayDetail("Thursday", "15:30", "19:30"),
+  createWeekdayDetail("Saturday", "10:00", "14:00"),
+
+  // Summer Schedule (template-2) weekdays
+  createWeekdayDetail("Monday", "15:30", "19:30"),
+  createWeekdayDetail("Tuesday", "15:30", "19:30"),
+  createWeekdayDetail("Wednesday", "15:30", "19:30"),
+  createWeekdayDetail("Thursday", "15:30", "19:30"),
+  createWeekdayDetail("Friday", "15:30", "19:30"),
+];
+
+// Set the templateId for each weekday detail
+scheduleTemplateWeekdays.forEach((weekday) => {
+  if (weekday.weekdayId === weekdays.find((w) => w.name === "Saturday")?.id) {
+    weekday.templateId = scheduleTemplates[0].id; // Spring Schedule
+  } else if (
+    weekday.weekdayId === weekdays.find((w) => w.name === "Friday")?.id
+  ) {
+    weekday.templateId = scheduleTemplates[1].id; // Summer Schedule
+  } else {
+    // For Mon-Thu, assign to both templates
+    weekday.templateId = scheduleTemplates[0].id;
+    // Create a copy for the summer schedule
+    scheduleTemplateWeekdays.push({
+      ...weekday,
+      templateId: scheduleTemplates[1].id,
+    });
+  }
+});

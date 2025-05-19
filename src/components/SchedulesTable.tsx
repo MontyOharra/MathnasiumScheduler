@@ -60,7 +60,7 @@ export default function SchedulesTable({
                 {formatDate(schedule.dateLastModified)}
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                {schedule.addedBy.firstName} {schedule.addedBy.lastName}
+                {schedule.addedByUserId}
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end space-x-3">
