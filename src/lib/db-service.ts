@@ -27,9 +27,7 @@ function isErrorResult(result: unknown): result is DbResultError {
 // Check if we're in an Electron environment
 const isElectron = () => {
   return (
-    typeof window !== "undefined" &&
-    // @ts-ignore - Electron is defined in electron.d.ts
-    typeof window.electron !== "undefined"
+    typeof window !== "undefined" && typeof window.electron !== "undefined"
   );
 };
 
@@ -115,7 +113,6 @@ export class DatabaseService {
   // Centers
   async getCenters(): Promise<Center[]> {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
     const results = await window.electron.database.getCenters();
     this.handleError(results);
     return results.map((center: Record<string, unknown>) =>
@@ -126,7 +123,6 @@ export class DatabaseService {
   async addCenter(center: Omit<Center, "id">): Promise<number> {
     this.checkElectron();
     const dbCenter = camelToSnake(center);
-    // @ts-ignore - Electron is defined in electron.d.ts
     const result = await window.electron.database.addCenter(dbCenter);
     this.handleError(result);
     return result.id as number;
@@ -135,8 +131,8 @@ export class DatabaseService {
   // Users
   async getUsers(): Promise<User[]> {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
-    const results = await window.electron.database.getAll("users");
+    const windowLocal = window as Window;
+    const results = await windowLocal.electron.database.getAll("users");
     this.handleError(results);
     return results.map((user: Record<string, unknown>) =>
       snakeToCamel<User>(user)
@@ -145,7 +141,6 @@ export class DatabaseService {
 
   async getUserById(id: number): Promise<User> {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
     const result = await window.electron.database.getById("users", id);
     this.handleError(result);
     return snakeToCamel<User>(result);
@@ -154,7 +149,6 @@ export class DatabaseService {
   async addUser(user: Omit<User, "id">): Promise<number> {
     this.checkElectron();
     const dbUser = camelToSnake(user);
-    // @ts-ignore - Electron is defined in electron.d.ts
     const result = await window.electron.database.insert("users", dbUser);
     this.handleError(result);
     return result.id as number;
@@ -163,7 +157,6 @@ export class DatabaseService {
   async updateUser(id: number, user: Partial<User>): Promise<boolean> {
     this.checkElectron();
     const dbUser = camelToSnake(user);
-    // @ts-ignore - Electron is defined in electron.d.ts
     const result = await window.electron.database.update("users", id, dbUser);
     this.handleError(result);
     return result.changes > 0;
@@ -172,7 +165,6 @@ export class DatabaseService {
   // Instructors
   async getInstructors(): Promise<Instructor[]> {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
     const results = await window.electron.database.getInstructors();
     this.handleError(results);
     return results.map((instructor: Record<string, unknown>) =>
@@ -182,7 +174,6 @@ export class DatabaseService {
 
   async getActiveInstructors(): Promise<Instructor[]> {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
     const results = await window.electron.database.getActiveInstructors();
     this.handleError(results);
     return results.map((instructor: Record<string, unknown>) =>
@@ -192,29 +183,12 @@ export class DatabaseService {
 
   async getInstructorWithGradeLevels(
     id: number
-  ): Promise<Instructor & { gradeLevelsTaught: GradeLevel[] }> {
+  ): Promise<number> {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
-    const result = await window.electron.database.getInstructorWithGradeLevels(
-      id
-    );
-    this.handleError(result);
 
-    const instructor = snakeToCamel<Instructor & { gradeLevels?: string }>(
-      result[0]
-    );
+    // TODO: Implement this
 
-    // Convert comma-separated grade levels to array
-    const gradeLevelsTaught = instructor.gradeLevels
-      ? (instructor.gradeLevels.split(",") as GradeLevel[])
-      : [];
-
-    delete instructor.gradeLevels;
-
-    return {
-      ...instructor,
-      gradeLevelsTaught,
-    };
+    return id;
   }
 
   async addInstructor(
@@ -225,7 +199,6 @@ export class DatabaseService {
     try {
       // Insert instructor
       const dbInstructor = camelToSnake(instructor);
-      // @ts-ignore - Electron is defined in electron.d.ts
       const instructorResult = await window.electron.database.insert(
         "instructors",
         dbInstructor
@@ -239,10 +212,9 @@ export class DatabaseService {
         const gradeData = {
           instructor_id: instructorId,
           grade_level: gradeLevel,
-          center_id: instructor.center,
+          center_id: (instructor as any).center?.id || instructor.centerId,
         };
-
-        // @ts-ignore - Electron is defined in electron.d.ts
+        
         await window.electron.database.insert(
           "instructor_grade_levels",
           gradeData
@@ -259,7 +231,6 @@ export class DatabaseService {
   // Students
   async getStudents(): Promise<Student[]> {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
     const results = await window.electron.database.getStudents();
     this.handleError(results);
     return results.map((student: Record<string, unknown>) =>
@@ -269,7 +240,6 @@ export class DatabaseService {
 
   async getActiveStudents(): Promise<Student[]> {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
     const results = await window.electron.database.getActiveStudents();
     this.handleError(results);
     return results.map((student: Record<string, unknown>) =>
@@ -280,7 +250,6 @@ export class DatabaseService {
   // Schedules
   async getScheduleTemplates(): Promise<WeeklyScheduleTemplate[]> {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
     const results = await window.electron.database.getScheduleTemplates();
     this.handleError(results);
     return results.map((template: Record<string, unknown>) =>
@@ -290,7 +259,6 @@ export class DatabaseService {
 
   async getSchedulesForDate(date: string): Promise<Schedule[]> {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
     const results = await window.electron.database.getSchedulesByDate(date);
     this.handleError(results);
     return results.map((schedule: Record<string, unknown>) =>
@@ -307,7 +275,6 @@ export class DatabaseService {
     }
   > {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
     const result = await window.electron.database.getScheduleWithDetails(id);
     this.handleError(result);
     return snakeToCamel<
@@ -330,7 +297,6 @@ export class DatabaseService {
     })[]
   > {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
     const results = await window.electron.database.getCellsForSchedule(
       scheduleId
     );
@@ -350,7 +316,6 @@ export class DatabaseService {
   // Custom queries
   async customQuery<T>(query: string, params: unknown[] = []): Promise<T[]> {
     this.checkElectron();
-    // @ts-ignore - Electron is defined in electron.d.ts
     const results = await window.electron.database.customQuery(query, params);
     this.handleError(results);
     return results.map((item: Record<string, unknown>) =>

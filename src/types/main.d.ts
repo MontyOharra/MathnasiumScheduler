@@ -1,147 +1,137 @@
-/* ──────────────────────────────
-   Lookup / Enum helpers
-   ────────────────────────────── */
-   export type GradeLevel =
-   | "K"
-   | "1"
-   | "2"
-   | "3"
-   | "4"
-   | "5"
-   | "6"
-   | "7"
-   | "8"
-   | "9"
-   | "10"
-   | "11"
-   | "12"
-   | "Geometry"
-   | "Algebra 1"
-   | "Algebra 2"
-   | "Pre-Calculus"
-   | "AP Calculus AB"
-   | "AP Calculus BC";
- 
- export type SessionTypeCode = "homework-help" | "one-on-one" | "binder";
- export type Weekday =
-   | "monday"
-   | "tuesday"
-   | "wednesday"
-   | "thursday"
-   | "friday"
-   | "saturday"
-   | "sunday";
- 
- export type RoleCode = "master" | "admin" | "tutor" | "viewer";
- 
- /* ──────────────────────────────
-    Orgs & Access-Control layer
-    ────────────────────────────── */
- export type Center = {
-   id: number;
-   name: string;
- };
- 
- export type Role = {
-   id: number;
-   code: RoleCode;
-   description: string;
- };
- 
- export type User = {
-   id: number;
-   center: Center;          // home center (tenant key)
-   role: Role;
-   email: string;
-   firstName: string;
-   lastName: string;
-   invitedById?: number;    // undefined for the first “master” user
-   isActive: boolean;
- };
- 
- /* ──────────────────────────────
-    Core domain entities
-    ────────────────────────────── */
- export type Instructor = {
-   id: number;
-   center: Center;
-   firstName: string;
-   lastName: string;
-   gradeLevelsTaught: GradeLevel[]; // many-to-many via join table
-   cellColor: string;
-   isActive: boolean;
- };
- 
- export type Student = {
-   id: number;
-   center: Center;
-   firstName: string;
-   lastName: string;
-   gradeLevel: GradeLevel;
-   isHomeworkHelp: boolean;
-   isActive: boolean;
- };
- 
- /** join row for instructor ⇄ grade level, if you need it in code */
- export type InstructorGradeLevel = {
-   instructorId: number;
-   gradeLevel: GradeLevel;
-   center: Center;
- };
- 
- /* ──────────────────────────────
-    Scheduling structures
-    ────────────────────────────── */
- export type WeeklyScheduleTemplateWeekday = {
-   templateId: string;
-   center: Center;
-   weekday: Weekday;
-   /** stored as “HH:mm” or a Date clipped to 1970-01-01 - pick your poison */
-   startTime: string | Date;
-   endTime: string | Date;
-   numColumns: number;
- };
- 
- export type WeeklyScheduleTemplate = {
-   id: string;              // UUID
-   center: Center;
-   name: string;
-   isDefault: boolean;
-   intervalLength: number;  // minutes
-   weekdayDetails: WeeklyScheduleTemplateWeekday[];
- };
- 
- export type Schedule = {
-   id: string;              // UUID
-   center: Center;
-   template: WeeklyScheduleTemplate;
-   addedBy: User;
-   dateCreated: Date;
-   dateLastModified: Date;
-   scheduleDate: Date;
- };
- 
- /* ──────────────────────────────
-    Events inside a schedule
-    ────────────────────────────── */
- export type Session = {
-   id: number;
-   center: Center;
-   student: Student;
-   type: SessionTypeCode;
-   scheduleId: string;
-   date: Date;
-   lengthMinutes: number;
- };
- 
- export type Cell = {
-   id: number;
-   center: Center;
-   scheduleId: string;
-   instructor: Instructor;
-   student: Student;
-   timeStart: Date;
-   timeEnd: Date;
-   columnNumber: number;
- };
- 
+/* ────────────────────────────────────────
+   Orgs & Access-Control Layer
+   ──────────────────────────────────────── */
+   export type Center = {
+    id: number;            // int
+    name: string;          // varchar
+  };
+  
+  export type Role = {
+    id: number;            // int
+    code: string;          // varchar
+    description: string;   // varchar
+  };
+  
+  export type User = {
+    id: number;                // int
+    centerId: number;          // int → foreign key to Center.id
+    roleId: number;            // int → foreign key to Role.id
+    email: string;             // varchar
+    firstName: string;         // varchar
+    lastName: string;          // varchar
+    invitedById: number | null;// int or null  
+    isActive: boolean;         // boolean
+  };
+  
+  
+  /* ────────────────────────────────────────
+     Lookups
+     ──────────────────────────────────────── */
+  export type GradeLevel = {
+    id: number;    // int
+    name: string;  // varchar
+  };
+  
+  export type SessionType = {
+    id: number;       // int
+    code: string;     // varchar
+    length: number;   // int
+    styling: string;  // string
+  };
+  
+  export type Weekday = {
+    id: number;    // int
+    name: string;  // varchar
+  };
+  
+  
+  /* ────────────────────────────────────────
+     Core Domain Tables
+     ──────────────────────────────────────── */
+  export type Instructor = {
+    id: number;            // int
+    centerId: number;      // int → Center.id
+    firstName: string;     // varchar
+    lastName: string;      // varchar
+    cellColor: string;     // varchar
+    isActive: boolean;     // boolean
+  };
+  
+  export type InstructorGradeLevel = {
+    instructorId: number;  // int → Instructor.id
+    gradeLevelId: number;  // int → GradeLevel.id
+  };
+  
+  export type Student = {
+    id: number;             // int
+    centerId: number;       // int → Center.id
+    firstName: string;      // varchar
+    lastName: string;       // varchar
+    gradeLevelId: number;   // int → GradeLevel.id
+    isHomeworkHelp: boolean;// boolean
+    isActive: boolean;      // boolean
+  };
+  
+  
+  /* ────────────────────────────────────────
+     Scheduling Structures
+     ──────────────────────────────────────── */
+  export type WeeklyScheduleTemplate = {
+    id: string;           // varchar (UUID)
+    centerId: number;     // int → Center.id
+    name: string;         // varchar
+    isDefault: boolean;   // boolean
+    intervalLength: number; // int (minutes)
+  };
+  
+  export type WeeklyScheduleTemplateWeekday = {
+    templateId: string;   // varchar → WeeklyScheduleTemplate.id
+    weekdayId: number;    // int → Weekday.id
+    startTime: string;    // time (e.g. "14:30:00")
+    endTime: string;      // time
+    numColumns: number;   // int
+  };
+  
+  
+  /* ────────────────────────────────────────
+     Schedules & Sessions
+     ──────────────────────────────────────── */
+  export type Schedule = {
+    id: string;             // varchar (UUID)
+    centerId: number;       // int → Center.id
+    templateId: string;     // varchar → WeeklyScheduleTemplate.id
+    addedByUserId: number;  // int → User.id
+    dateCreated: Date;      // datetime
+    dateLastModified: Date; // datetime
+    scheduleDate: Date;     // date
+  };
+  
+  export type ScheduleSession = {
+    scheduleId: string;   // varchar → Schedule.id
+    sessionId: number;    // int → Session.id
+  };
+  
+  export type SessionRow = {
+    id: number;             // int
+    centerId: number;       // int → Center.id
+    studentId: number;      // int → Student.id
+    sessionTypeId: number;  // int → SessionType.id
+    date: Date;             // datetime
+    lengthMinutes: number;  // int
+  };
+  
+  
+  /* ────────────────────────────────────────
+     Cells (time-slot assignments)
+     ──────────────────────────────────────── */
+  export type Cell = {
+    id: number;            // int
+    centerId: number;      // int → Center.id
+    scheduleId: string;    // varchar → Schedule.id
+    instructorId: number;  // int → Instructor.id
+    studentId: number;     // int → Student.id
+    timeStart: Date;       // datetime
+    timeEnd: Date;         // datetime
+    columnNumber: number;  // int
+  };
+  

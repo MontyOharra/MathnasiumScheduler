@@ -184,10 +184,10 @@ const useDbStore = create<DatabaseStore>((set) => ({
       const result = await dbService.customQuery<{ id: number }>(
         "INSERT INTO students (center_id, first_name, last_name, grade_level, is_homework_help, is_active) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
         [
-          student.center,
+          student.centerId,
           student.firstName,
           student.lastName,
-          student.gradeLevel,
+          student.gradeLevelId,
           student.isHomeworkHelp ? 1 : 0,
           1,
         ]

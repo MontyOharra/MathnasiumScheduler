@@ -49,3 +49,6 @@ next-env.d.ts
 # SQLite databases
 *.db
 *.db-journal
+
+# Context directory (reference information)
+/context/

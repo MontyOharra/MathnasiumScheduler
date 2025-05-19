@@ -58,6 +58,7 @@ interface ElectronAPI {
   };
 }
 
+// Augment the Window interface
 declare global {
   interface Window {
     electron: ElectronAPI;
