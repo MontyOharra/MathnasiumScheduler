@@ -1,10 +1,10 @@
-import React from "react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  createColumnHelper,
-} from "@tanstack/react-table";
+import React, { useMemo } from "react";
+import { AgGridReact } from "ag-grid-react";
+import { ColDef } from "ag-grid-community";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
+import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+ModuleRegistry.registerModules([ AllCommunityModule ]);
 import {
   Student,
   Instructor,
@@ -54,42 +54,64 @@ const Schedule: React.FC<ScheduleProps> = ({
     return `${hours}:${mins.toString().padStart(2, "0")}`;
   });
 
-  // Create column helper
-  const columnHelper = createColumnHelper<{
-    time: string;
-    cells: { id: number }[];
-  }>();
+  // Create column definitions
+  const columnDefs = useMemo<ColDef[]>(() => {
+    const columns: ColDef[] = [
+      {
+        field: "time",
+        headerName: "Time",
+        width: 100,
+        pinned: "left",
+        cellStyle: { backgroundColor: "white" },
+      },
+    ];
 
-  // Define columns
-  const columns = [
-    columnHelper.accessor("time", {
-      header: "Time",
-      cell: (info) => info.getValue(),
-    }),
-    // Create columns based on weekday.numColumns
-    ...Array.from({ length: weekday.numColumns }, (_, i) =>
-      columnHelper.accessor((row) => row.cells[i], {
-        id: `column-${i + 1}`,
-        header: `Column ${i + 1}`,
-        cell: () => null, // Empty cell for now
-      })
-    ),
-  ];
+    // Add columns based on weekday.numColumns
+    for (let i = 0; i < weekday.numColumns; i++) {
+      columns.push({
+        field: `column${i + 1}`,
+        headerName: `Column ${i + 1}`,
+        cellRenderer: (params: any) => {
+          const cellData = params.value;
+          if (!cellData) return null;
 
-  // Prepare data for the table
-  const data = timeLabels.map((time, rowIndex) => ({
-    time,
-    cells: Array.from({ length: weekday.numColumns }, (_, i) => ({
-      id: rowIndex * weekday.numColumns + i,
-    })),
-  }));
+          return (
+            <Cell
+              student={students[0]} // Temporary: Use first student for testing
+              instructors={instructors}
+              onInstructorChange={(instructor) => {
+                onCellChange({
+                  id: cellData.id,
+                  centerId: 1,
+                  scheduleId: "temp",
+                  instructorId: instructor.id,
+                  studentId: students[0].id,
+                  timeStart: new Date(),
+                  timeEnd: new Date(),
+                  columnNumber: i + 1,
+                });
+              }}
+            />
+          );
+        },
+      });
+    }
 
-  // Create table instance
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
+    return columns;
+  }, [weekday.numColumns, students, instructors]);
+
+  // Create row data
+  const rowData = useMemo(() => {
+    return timeLabels.map((time, rowIndex) => {
+      const row: any = { time };
+      for (let i = 0; i < weekday.numColumns; i++) {
+        row[`column${i + 1}`] = {
+          id: rowIndex * weekday.numColumns + i,
+        };
+      }
+      return row;
+    });
+  }, [timeLabels, weekday.numColumns]);
 
   return (
     <div>
@@ -99,33 +121,29 @@ const Schedule: React.FC<ScheduleProps> = ({
         <div>Weekday, 01/01/1970</div>
         <button>import</button>
       </div>
-      <table>
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id}>
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div
+        className="ag-theme-alpine"
+        style={{
+          height: 500,
+          width: "100%",
+          backgroundColor: "white",
+        }}
+      >
+        <AgGridReact
+          columnDefs={columnDefs}
+          rowData={rowData}
+          defaultColDef={{
+            flex: 1,
+            minWidth: 100,
+            resizable: true,
+            cellStyle: { padding: 0 },
+          }}
+          rowHeight={100}
+          headerHeight={40}
+          suppressCellFocus={true}
+          suppressRowClickSelection={true}
+        />
+      </div>
     </div>
   );
 };
