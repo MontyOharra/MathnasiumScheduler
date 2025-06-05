@@ -29,19 +29,19 @@
      ──────────────────────────────────────── */
   export type GradeLevel = {
     id: number;    // int
-    name: string;  // varchar
+    name: GradeLevelName;  // varchar
   };
   
   export type SessionType = {
     id: number;       // int
-    code: string;     // varchar
+    code: SessionTypeCode;     // varchar
     length: number;   // int
     styling: string;  // string
   };
   
   export type Weekday = {
     id: number;    // int
-    name: string;  // varchar
+    name: WeekdayName;  // varchar
   };
   
   
