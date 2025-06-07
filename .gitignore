@@ -50,5 +50,3 @@ next-env.d.ts
 *.db
 *.db-journal
 
-# Context directory (reference information)
-/context/
