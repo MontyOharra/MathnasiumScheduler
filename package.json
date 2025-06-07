@@ -2,7 +2,6 @@
   "name": "mathnasium_scheduler_ts",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "main": "main/index.js",
   "scripts": {
     "dev": "next dev --turbopack",
@@ -14,7 +13,8 @@
     "electron": "npm run build-no-lint && npm run electron-dev",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "postinstall": "npx electron-builder install-app-deps && npx @electron/rebuild --force --module-dir . -o better-sqlite3"
+    "postinstall": "npx electron-builder install-app-deps && npx @electron/rebuild --force --module-dir . -o better-sqlite3",
+    "generate-db-seed": "node scripts/generate-db-seed.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -49,7 +49,7 @@
     "eslint-config-next": "15.3.1",
     "sqlite3": "^5.1.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5.8.3"
   },
   "build": {
     "appId": "com.mathnasium.scheduler",

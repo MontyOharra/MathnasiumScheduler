@@ -3,10 +3,47 @@
  * This file contains functions for setting up and populating the database.
  */
 
+const { app } = require("electron");
+const path = require("path");
+const fs = require("fs");
+
+// Use app.log for main process logging
+app.log = app.log || console.log;
+app.error = app.error || console.error;
+
+/**
+ * Reads a JSON data file
+ * @param {string} filePath - Path to the JSON file
+ * @returns {any} - Parsed data from the file
+ */
+const readJsonFile = (filePath) => {
+  const fullPath = path.join(
+    __dirname,
+    "..",
+    "src",
+    "data",
+    "db-seed",
+    filePath
+  );
+  app.log(`Reading data file: ${fullPath}`);
+
+  try {
+    const content = fs.readFileSync(fullPath, "utf8");
+    const data = JSON.parse(content);
+    app.log(`Successfully parsed ${data.length} items from ${filePath}`);
+    return data;
+  } catch (error) {
+    app.error(`Error reading/parsing ${filePath}:`, error);
+    throw error;
+  }
+};
+
 /**
  * Creates all database tables with appropriate schema and constraints
  */
 const createTables = (db) => {
+  app.log("Creating database tables...");
+
   // Orgs & Access-Control Layer
   db.exec(`
     CREATE TABLE IF NOT EXISTS center (
@@ -14,6 +51,7 @@ const createTables = (db) => {
       name TEXT NOT NULL
     )
   `);
+  app.log("Created center table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS role (
@@ -22,6 +60,7 @@ const createTables = (db) => {
       description TEXT NOT NULL
     )
   `);
+  app.log("Created role table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS user (
@@ -38,6 +77,7 @@ const createTables = (db) => {
       FOREIGN KEY (invited_by_id) REFERENCES user(id)
     )
   `);
+  app.log("Created user table");
 
   // Lookups
   db.exec(`
@@ -46,6 +86,7 @@ const createTables = (db) => {
       name TEXT NOT NULL
     )
   `);
+  app.log("Created grade_level table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS session_type (
@@ -55,6 +96,7 @@ const createTables = (db) => {
       styling TEXT NOT NULL
     )
   `);
+  app.log("Created session_type table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS weekday (
@@ -62,6 +104,7 @@ const createTables = (db) => {
       name TEXT NOT NULL
     )
   `);
+  app.log("Created weekday table");
 
   // Core domain tables
   db.exec(`
@@ -75,6 +118,7 @@ const createTables = (db) => {
       FOREIGN KEY (center_id) REFERENCES center(id)
     )
   `);
+  app.log("Created instructor table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS instructor_grade_level (
@@ -85,6 +129,7 @@ const createTables = (db) => {
       FOREIGN KEY (grade_level_id) REFERENCES grade_level(id)
     )
   `);
+  app.log("Created instructor_grade_level table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS student (
@@ -99,6 +144,7 @@ const createTables = (db) => {
       FOREIGN KEY (grade_level_id) REFERENCES grade_level(id)
     )
   `);
+  app.log("Created student table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS weekly_schedule_template (
@@ -110,6 +156,7 @@ const createTables = (db) => {
       FOREIGN KEY (center_id) REFERENCES center(id)
     )
   `);
+  app.log("Created weekly_schedule_template table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS weekly_schedule_template_weekday (
@@ -123,6 +170,7 @@ const createTables = (db) => {
       FOREIGN KEY (weekday_id) REFERENCES weekday(id)
     )
   `);
+  app.log("Created weekly_schedule_template_weekday table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS schedule (
@@ -138,6 +186,7 @@ const createTables = (db) => {
       FOREIGN KEY (added_by_user_id) REFERENCES user(id)
     )
   `);
+  app.log("Created schedule table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS schedule_session (
@@ -148,6 +197,7 @@ const createTables = (db) => {
       FOREIGN KEY (session_id) REFERENCES session(id)
     )
   `);
+  app.log("Created schedule_session table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS session (
@@ -156,12 +206,12 @@ const createTables = (db) => {
       student_id INTEGER NOT NULL,
       session_type_id INTEGER NOT NULL,
       date TEXT NOT NULL,
-      length_minutes INTEGER NOT NULL,
       FOREIGN KEY (center_id) REFERENCES center(id),
       FOREIGN KEY (student_id) REFERENCES student(id),
       FOREIGN KEY (session_type_id) REFERENCES session_type(id)
     )
   `);
+  app.log("Created session table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS cell (
@@ -179,12 +229,15 @@ const createTables = (db) => {
       FOREIGN KEY (student_id) REFERENCES student(id)
     )
   `);
+  app.log("Created cell table");
 };
 
 /**
  * Populates lookup tables with initial values
  */
 const populateLookupTables = (db) => {
+  app.log("Starting to populate lookup tables...");
+
   // Populate weekdays if empty
   const weekdayCount = db
     .prepare("SELECT COUNT(*) as count FROM weekday")
@@ -207,7 +260,7 @@ const populateLookupTables = (db) => {
       insertWeekday.run(weekday.name);
     }
 
-    console.log("Weekdays populated successfully");
+    app.log("Weekdays populated successfully");
   }
 
   // Populate grade levels if empty
@@ -265,7 +318,7 @@ const populateLookupTables = (db) => {
       insertGradeLevel.run(gradeLevel.name);
     }
 
-    console.log("Grade levels populated successfully");
+    app.log("Grade levels populated successfully");
   }
 
   // Optionally populate default roles if empty
@@ -297,11 +350,689 @@ const populateLookupTables = (db) => {
       insertRole.run(role.code, role.description);
     }
 
-    console.log("Default roles populated successfully");
+    app.log("Default roles populated successfully");
   }
+};
+
+/**
+ * Populates the database with test data
+ */
+const populateTestData = (db) => {
+  app.log("Starting to populate test data...");
+
+  // 1. First, insert the center (parent table)
+  const center = {
+    id: 1,
+    name: "Test Center",
+  };
+  db.prepare("INSERT INTO center (id, name) VALUES (?, ?)").run(
+    center.id,
+    center.name
+  );
+  app.log("Inserted test center");
+
+  // 2. Insert roles (needed for users)
+  const roles = [
+    { id: 1, code: "ADMIN", description: "Administrator" },
+    { id: 2, code: "INSTRUCTOR", description: "Instructor" },
+  ];
+  const insertRole = db.prepare(
+    "INSERT INTO role (id, code, description) VALUES (?, ?, ?)"
+  );
+  roles.forEach((role) => {
+    insertRole.run(role.id, role.code, role.description);
+  });
+  app.log("Inserted roles");
+
+  // 3. Insert grade levels (needed for students and instructors)
+  const gradeLevels = [
+    { id: 1, name: "Kindergarten" },
+    { id: 2, name: "1st Grade" },
+    { id: 3, name: "2nd Grade" },
+    { id: 4, name: "3rd Grade" },
+    { id: 5, name: "4th Grade" },
+    { id: 6, name: "5th Grade" },
+    { id: 7, name: "6th Grade" },
+    { id: 8, name: "7th Grade" },
+    { id: 9, name: "8th Grade" },
+    { id: 10, name: "9th Grade" },
+    { id: 11, name: "10th Grade" },
+    { id: 12, name: "11th Grade" },
+    { id: 13, name: "12th Grade" },
+  ];
+  const insertGradeLevel = db.prepare(
+    "INSERT INTO grade_level (id, name) VALUES (?, ?)"
+  );
+  gradeLevels.forEach((level) => {
+    insertGradeLevel.run(level.id, level.name);
+  });
+  app.log("Inserted grade levels");
+
+  // 4. Insert session types (needed for sessions)
+  const sessionTypes = [
+    { id: 1, code: "REGULAR", length: 60, styling: "regular" },
+    { id: 2, code: "MAKEUP", length: 60, styling: "makeup" },
+    { id: 3, code: "HOMEWORK", length: 30, styling: "homework" },
+  ];
+  const insertSessionType = db.prepare(
+    "INSERT INTO session_type (id, code, length, styling) VALUES (?, ?, ?, ?)"
+  );
+  sessionTypes.forEach((type) => {
+    insertSessionType.run(type.id, type.code, type.length, type.styling);
+  });
+  app.log("Inserted session types");
+
+  // 5. Insert weekdays (needed for schedule templates)
+  const weekdays = [
+    { id: 1, name: "Monday" },
+    { id: 2, name: "Tuesday" },
+    { id: 3, name: "Wednesday" },
+    { id: 4, name: "Thursday" },
+    { id: 5, name: "Friday" },
+    { id: 6, name: "Saturday" },
+    { id: 7, name: "Sunday" },
+  ];
+  const insertWeekday = db.prepare(
+    "INSERT INTO weekday (id, name) VALUES (?, ?)"
+  );
+  weekdays.forEach((day) => {
+    insertWeekday.run(day.id, day.name);
+  });
+  app.log("Inserted weekdays");
+
+  // 6. Insert admin user (needed for schedules)
+  const adminUser = {
+    id: 1,
+    center_id: center.id,
+    role_id: 1, // ADMIN role
+    email: "admin@test.com",
+    first_name: "Admin",
+    last_name: "User",
+    invited_by_id: null,
+    is_active: 1,
+  };
+  db.prepare(
+    "INSERT INTO user (id, center_id, role_id, email, first_name, last_name, invited_by_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  ).run(
+    adminUser.id,
+    adminUser.center_id,
+    adminUser.role_id,
+    adminUser.email,
+    adminUser.first_name,
+    adminUser.last_name,
+    adminUser.invited_by_id,
+    adminUser.is_active
+  );
+  app.log("Inserted admin user");
+
+  // 7. Insert schedule templates
+  const templates = [
+    {
+      id: "spring-schedule",
+      center_id: center.id,
+      name: "Spring Schedule",
+      is_default: 1,
+      interval_length: 30,
+    },
+    {
+      id: "summer-schedule",
+      center_id: center.id,
+      name: "Summer Schedule",
+      is_default: 0,
+      interval_length: 30,
+    },
+  ];
+  const insertTemplate = db.prepare(
+    "INSERT INTO weekly_schedule_template (id, center_id, name, is_default, interval_length) VALUES (?, ?, ?, ?, ?)"
+  );
+  templates.forEach((template) => {
+    insertTemplate.run(
+      template.id,
+      template.center_id,
+      template.name,
+      template.is_default,
+      template.interval_length
+    );
+  });
+  app.log("Inserted schedule templates");
+
+  // 8. Insert schedule template weekdays
+  const templateWeekdays = [
+    {
+      template_id: "spring-schedule",
+      weekday_id: 1,
+      start_time: "15:30",
+      end_time: "19:30",
+      num_columns: 3,
+    },
+    {
+      template_id: "spring-schedule",
+      weekday_id: 2,
+      start_time: "15:30",
+      end_time: "19:30",
+      num_columns: 3,
+    },
+    {
+      template_id: "spring-schedule",
+      weekday_id: 3,
+      start_time: "15:30",
+      end_time: "19:30",
+      num_columns: 3,
+    },
+    {
+      template_id: "spring-schedule",
+      weekday_id: 4,
+      start_time: "15:30",
+      end_time: "19:30",
+      num_columns: 3,
+    },
+    {
+      template_id: "spring-schedule",
+      weekday_id: 5,
+      start_time: "15:30",
+      end_time: "19:30",
+      num_columns: 3,
+    },
+  ];
+  const insertTemplateWeekday = db.prepare(
+    "INSERT INTO weekly_schedule_template_weekday (template_id, weekday_id, start_time, end_time, num_columns) VALUES (?, ?, ?, ?, ?)"
+  );
+  templateWeekdays.forEach((weekday) => {
+    insertTemplateWeekday.run(
+      weekday.template_id,
+      weekday.weekday_id,
+      weekday.start_time,
+      weekday.end_time,
+      weekday.num_columns
+    );
+  });
+  app.log("Inserted schedule template weekdays");
+
+  // 9. Insert instructors
+  const instructors = [
+    {
+      id: 1,
+      center_id: center.id,
+      first_name: "John",
+      last_name: "Doe",
+      cell_color: "#FF0000",
+      is_active: 1,
+    },
+    {
+      id: 2,
+      center_id: center.id,
+      first_name: "Jane",
+      last_name: "Smith",
+      cell_color: "#00FF00",
+      is_active: 1,
+    },
+    {
+      id: 3,
+      center_id: center.id,
+      first_name: "Bob",
+      last_name: "Johnson",
+      cell_color: "#0000FF",
+      is_active: 1,
+    },
+    {
+      id: 4,
+      center_id: center.id,
+      first_name: "Alice",
+      last_name: "Brown",
+      cell_color: "#FFFF00",
+      is_active: 1,
+    },
+    {
+      id: 5,
+      center_id: center.id,
+      first_name: "Charlie",
+      last_name: "Wilson",
+      cell_color: "#FF00FF",
+      is_active: 1,
+    },
+  ];
+  const insertInstructor = db.prepare(
+    "INSERT INTO instructor (id, center_id, first_name, last_name, cell_color, is_active) VALUES (?, ?, ?, ?, ?, ?)"
+  );
+  instructors.forEach((instructor) => {
+    insertInstructor.run(
+      instructor.id,
+      instructor.center_id,
+      instructor.first_name,
+      instructor.last_name,
+      instructor.cell_color,
+      instructor.is_active
+    );
+  });
+  app.log("Inserted instructors");
+
+  // 10. Insert students
+  const students = [
+    {
+      id: 1,
+      center_id: center.id,
+      first_name: "Emma",
+      last_name: "Thompson",
+      grade_level_id: 5,
+      is_homework_help: 0,
+      is_active: 1,
+    },
+    {
+      id: 2,
+      center_id: center.id,
+      first_name: "Liam",
+      last_name: "Anderson",
+      grade_level_id: 6,
+      is_homework_help: 1,
+      is_active: 1,
+    },
+    {
+      id: 3,
+      center_id: center.id,
+      first_name: "Olivia",
+      last_name: "Martinez",
+      grade_level_id: 4,
+      is_homework_help: 0,
+      is_active: 1,
+    },
+    {
+      id: 4,
+      center_id: center.id,
+      first_name: "Noah",
+      last_name: "Taylor",
+      grade_level_id: 7,
+      is_homework_help: 1,
+      is_active: 1,
+    },
+    {
+      id: 5,
+      center_id: center.id,
+      first_name: "Ava",
+      last_name: "Thomas",
+      grade_level_id: 5,
+      is_homework_help: 0,
+      is_active: 1,
+    },
+    {
+      id: 6,
+      center_id: center.id,
+      first_name: "Ethan",
+      last_name: "Hernandez",
+      grade_level_id: 6,
+      is_homework_help: 1,
+      is_active: 1,
+    },
+    {
+      id: 7,
+      center_id: center.id,
+      first_name: "Sophia",
+      last_name: "Moore",
+      grade_level_id: 4,
+      is_homework_help: 0,
+      is_active: 1,
+    },
+    {
+      id: 8,
+      center_id: center.id,
+      first_name: "Mason",
+      last_name: "Martin",
+      grade_level_id: 7,
+      is_homework_help: 1,
+      is_active: 1,
+    },
+    {
+      id: 9,
+      center_id: center.id,
+      first_name: "Isabella",
+      last_name: "Jackson",
+      grade_level_id: 5,
+      is_homework_help: 0,
+      is_active: 1,
+    },
+    {
+      id: 10,
+      center_id: center.id,
+      first_name: "William",
+      last_name: "Thompson",
+      grade_level_id: 6,
+      is_homework_help: 1,
+      is_active: 1,
+    },
+    {
+      id: 11,
+      center_id: center.id,
+      first_name: "Mia",
+      last_name: "White",
+      grade_level_id: 4,
+      is_homework_help: 0,
+      is_active: 1,
+    },
+    {
+      id: 12,
+      center_id: center.id,
+      first_name: "James",
+      last_name: "Harris",
+      grade_level_id: 7,
+      is_homework_help: 1,
+      is_active: 1,
+    },
+    {
+      id: 13,
+      center_id: center.id,
+      first_name: "Charlotte",
+      last_name: "Clark",
+      grade_level_id: 5,
+      is_homework_help: 0,
+      is_active: 1,
+    },
+    {
+      id: 14,
+      center_id: center.id,
+      first_name: "Benjamin",
+      last_name: "Lewis",
+      grade_level_id: 6,
+      is_homework_help: 1,
+      is_active: 1,
+    },
+    {
+      id: 15,
+      center_id: center.id,
+      first_name: "Amelia",
+      last_name: "Robinson",
+      grade_level_id: 4,
+      is_homework_help: 0,
+      is_active: 1,
+    },
+    {
+      id: 16,
+      center_id: center.id,
+      first_name: "Lucas",
+      last_name: "Walker",
+      grade_level_id: 7,
+      is_homework_help: 1,
+      is_active: 1,
+    },
+    {
+      id: 17,
+      center_id: center.id,
+      first_name: "Harper",
+      last_name: "Young",
+      grade_level_id: 5,
+      is_homework_help: 0,
+      is_active: 1,
+    },
+    {
+      id: 18,
+      center_id: center.id,
+      first_name: "Henry",
+      last_name: "Allen",
+      grade_level_id: 6,
+      is_homework_help: 1,
+      is_active: 1,
+    },
+  ];
+  const insertStudent = db.prepare(
+    "INSERT INTO student (id, center_id, first_name, last_name, grade_level_id, is_homework_help, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  );
+  students.forEach((student) => {
+    insertStudent.run(
+      student.id,
+      student.center_id,
+      student.first_name,
+      student.last_name,
+      student.grade_level_id,
+      student.is_homework_help,
+      student.is_active
+    );
+  });
+  app.log("Inserted students");
+
+  // 11. Insert schedules
+  const schedules = [
+    {
+      id: "2025-03-01",
+      center_id: center.id,
+      template_id: "spring-schedule",
+      added_by_user_id: adminUser.id,
+      date_created: "2025-02-15T10:00:00.000Z",
+      date_last_modified: "2025-02-15T10:00:00.000Z",
+      schedule_date: "2025-03-01",
+    },
+    {
+      id: "2025-03-02",
+      center_id: center.id,
+      template_id: "spring-schedule",
+      added_by_user_id: adminUser.id,
+      date_created: "2025-02-15T10:00:00.000Z",
+      date_last_modified: "2025-02-15T10:00:00.000Z",
+      schedule_date: "2025-03-02",
+    },
+    {
+      id: "2025-03-03",
+      center_id: center.id,
+      template_id: "spring-schedule",
+      added_by_user_id: adminUser.id,
+      date_created: "2025-02-15T10:00:00.000Z",
+      date_last_modified: "2025-02-15T10:00:00.000Z",
+      schedule_date: "2025-03-03",
+    },
+    {
+      id: "2025-03-04",
+      center_id: center.id,
+      template_id: "spring-schedule",
+      added_by_user_id: adminUser.id,
+      date_created: "2025-02-15T10:00:00.000Z",
+      date_last_modified: "2025-02-15T10:00:00.000Z",
+      schedule_date: "2025-03-04",
+    },
+    {
+      id: "2025-03-05",
+      center_id: center.id,
+      template_id: "spring-schedule",
+      added_by_user_id: adminUser.id,
+      date_created: "2025-02-15T10:00:00.000Z",
+      date_last_modified: "2025-02-15T10:00:00.000Z",
+      schedule_date: "2025-03-05",
+    },
+    {
+      id: "2025-03-06",
+      center_id: center.id,
+      template_id: "spring-schedule",
+      added_by_user_id: adminUser.id,
+      date_created: "2025-02-15T10:00:00.000Z",
+      date_last_modified: "2025-02-15T10:00:00.000Z",
+      schedule_date: "2025-03-06",
+    },
+    {
+      id: "2025-03-07",
+      center_id: center.id,
+      template_id: "spring-schedule",
+      added_by_user_id: adminUser.id,
+      date_created: "2025-02-15T10:00:00.000Z",
+      date_last_modified: "2025-02-15T10:00:00.000Z",
+      schedule_date: "2025-03-07",
+    },
+  ];
+  const insertSchedule = db.prepare(
+    "INSERT INTO schedule (id, center_id, template_id, added_by_user_id, date_created, date_last_modified, schedule_date) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  );
+  schedules.forEach((schedule) => {
+    insertSchedule.run(
+      schedule.id,
+      schedule.center_id,
+      schedule.template_id,
+      schedule.added_by_user_id,
+      schedule.date_created,
+      schedule.date_last_modified,
+      schedule.schedule_date
+    );
+  });
+  app.log("Inserted schedules");
+
+  // 12. Insert sessions
+  const sessions = [
+    {
+      id: 1,
+      center_id: center.id,
+      student_id: 1,
+      session_type_id: 1,
+      date: "2025-03-01T15:30:00.000Z",
+    },
+    {
+      id: 2,
+      center_id: center.id,
+      student_id: 2,
+      session_type_id: 1,
+      date: "2025-03-01T16:00:00.000Z",
+    },
+    {
+      id: 3,
+      center_id: center.id,
+      student_id: 3,
+      session_type_id: 1,
+      date: "2025-03-01T16:30:00.000Z",
+    },
+    {
+      id: 4,
+      center_id: center.id,
+      student_id: 4,
+      session_type_id: 1,
+      date: "2025-03-01T17:00:00.000Z",
+    },
+    {
+      id: 5,
+      center_id: center.id,
+      student_id: 5,
+      session_type_id: 1,
+      date: "2025-03-01T17:30:00.000Z",
+    },
+    {
+      id: 6,
+      center_id: center.id,
+      student_id: 6,
+      session_type_id: 1,
+      date: "2025-03-01T18:00:00.000Z",
+    },
+    {
+      id: 7,
+      center_id: center.id,
+      student_id: 7,
+      session_type_id: 1,
+      date: "2025-03-01T18:30:00.000Z",
+    },
+    {
+      id: 8,
+      center_id: center.id,
+      student_id: 8,
+      session_type_id: 1,
+      date: "2025-03-01T19:00:00.000Z",
+    },
+    {
+      id: 9,
+      center_id: center.id,
+      student_id: 9,
+      session_type_id: 1,
+      date: "2025-03-01T15:30:00.000Z",
+    },
+    {
+      id: 10,
+      center_id: center.id,
+      student_id: 10,
+      session_type_id: 1,
+      date: "2025-03-01T16:00:00.000Z",
+    },
+    {
+      id: 11,
+      center_id: center.id,
+      student_id: 11,
+      session_type_id: 1,
+      date: "2025-03-01T16:30:00.000Z",
+    },
+    {
+      id: 12,
+      center_id: center.id,
+      student_id: 12,
+      session_type_id: 1,
+      date: "2025-03-01T17:00:00.000Z",
+    },
+    {
+      id: 13,
+      center_id: center.id,
+      student_id: 13,
+      session_type_id: 1,
+      date: "2025-03-01T17:30:00.000Z",
+    },
+    {
+      id: 14,
+      center_id: center.id,
+      student_id: 14,
+      session_type_id: 1,
+      date: "2025-03-01T18:00:00.000Z",
+    },
+    {
+      id: 15,
+      center_id: center.id,
+      student_id: 15,
+      session_type_id: 1,
+      date: "2025-03-01T18:30:00.000Z",
+    },
+    {
+      id: 16,
+      center_id: center.id,
+      student_id: 16,
+      session_type_id: 1,
+      date: "2025-03-01T19:00:00.000Z",
+    },
+    {
+      id: 17,
+      center_id: center.id,
+      student_id: 17,
+      session_type_id: 1,
+      date: "2025-03-01T15:30:00.000Z",
+    },
+    {
+      id: 18,
+      center_id: center.id,
+      student_id: 18,
+      session_type_id: 1,
+      date: "2025-03-01T16:00:00.000Z",
+    },
+  ];
+  const insertSession = db.prepare(
+    "INSERT INTO session (id, center_id, student_id, session_type_id, date) VALUES (?, ?, ?, ?, ?)"
+  );
+  sessions.forEach((session) => {
+    insertSession.run(
+      session.id,
+      session.center_id,
+      session.student_id,
+      session.session_type_id,
+      session.date
+    );
+  });
+  app.log("Inserted sessions");
+
+  // 13. Insert schedule sessions
+  const scheduleSessions = sessions.map((session) => ({
+    schedule_id: "2025-03-01",
+    session_id: session.id,
+  }));
+  const insertScheduleSession = db.prepare(
+    "INSERT INTO schedule_session (schedule_id, session_id) VALUES (?, ?)"
+  );
+  scheduleSessions.forEach((scheduleSession) => {
+    insertScheduleSession.run(
+      scheduleSession.schedule_id,
+      scheduleSession.session_id
+    );
+  });
+  app.log("Inserted schedule sessions");
+
+  app.log("Test data population completed successfully");
 };
 
 module.exports = {
   createTables,
   populateLookupTables,
+  populateTestData,
 };

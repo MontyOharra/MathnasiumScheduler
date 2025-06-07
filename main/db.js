@@ -1,9 +1,14 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const Database = require("better-sqlite3");
 const path = require("path");
 const fs = require("fs");
 const { app } = require("electron");
 const isDev = require("electron-is-dev");
-const { createTables, populateLookupTables } = require("./db-helpers");
+const {
+  createTables,
+  populateLookupTables,
+  populateTestData,
+} = require("./db-helpers");
 
 // Define paths for different environments
 const getDatabasePath = () => {
@@ -23,7 +28,11 @@ let db = null;
 const initDatabase = () => {
   const dbPath = getDatabasePath();
 
-  console.log(`Initializing database at: ${dbPath}`);
+  // Use app.log for main process logging
+  app.log = app.log || console.log;
+  app.error = app.error || console.error;
+
+  app.log(`Initializing database at: ${dbPath}`);
 
   try {
     // Ensure directory exists for production
@@ -36,20 +45,31 @@ const initDatabase = () => {
 
     // Create/open database connection
     db = new Database(dbPath);
+    app.log("Database connection established");
 
     // Enable foreign keys
     db.pragma("foreign_keys = ON");
+    app.log("Foreign keys enabled");
 
     // Create tables using the helper function
+    app.log("Creating database tables...");
     createTables(db);
+    app.log("Tables created successfully");
 
     // Populate lookup tables using the helper function
+    app.log("Populating lookup tables...");
     populateLookupTables(db);
+    app.log("Lookup tables populated successfully");
 
-    console.log("Database initialized successfully");
+    // Populate test data
+    app.log("Populating test data...");
+    populateTestData(db);
+    app.log("Test data populated successfully");
+
+    app.log("Database initialized successfully");
     return db;
   } catch (error) {
-    console.error("Database initialization error:", error);
+    app.error("Database initialization error:", error);
     throw error;
   }
 };
@@ -67,7 +87,7 @@ const closeDatabase = () => {
   if (db) {
     db.close();
     db = null;
-    console.log("Database connection closed");
+    app.log("Database connection closed");
   }
 };
 

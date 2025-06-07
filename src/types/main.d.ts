@@ -111,13 +111,12 @@
     sessionId: number;    // int → Session.id
   };
   
-  export type SessionRow = {
+  export type Session = {
     id: number;             // int
     centerId: number;       // int → Center.id
     studentId: number;      // int → Student.id
     sessionTypeId: number;  // int → SessionType.id
     date: Date;             // datetime
-    lengthMinutes: number;  // int
   };
   
   

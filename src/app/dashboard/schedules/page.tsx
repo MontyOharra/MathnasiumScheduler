@@ -2,10 +2,10 @@
 
 import NewScheduleButton from "@/components/NewScheduleButton";
 import ExpandableScheduleTable from "@/components/ExpandableScheduleTable";
-import { schedules } from "@/data/schedules";
 import { Schedule } from "@/types/main";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dbService from "@/lib/db-service";
 
 export default function SchedulesPage() {
   const router = useRouter();
@@ -13,10 +13,14 @@ export default function SchedulesPage() {
   const [schedulesData, setSchedulesData] = useState<Schedule[]>([]);
 
   useEffect(() => {
-    // In a real app, you would fetch data from your API or database
-    // For now, just use the mock data
-    setSchedulesData(schedules || []);
-    setIsLoaded(true);
+    
+    async function fetchSchedules() {
+      const schedules = await dbService.getSchedulesByCenterId(0);
+      setSchedulesData(schedules || []);
+      setIsLoaded(true);
+    }
+
+    fetchSchedules();
   }, []);
 
   const handleEdit = (schedule: Schedule) => {

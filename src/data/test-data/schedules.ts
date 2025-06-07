@@ -22,9 +22,9 @@ const createDate = (dateStr: string, hours: number, minutes: number) => {
 export const schedules: Schedule[] = [
   // Past schedules
   {
-    id: "schedule-past-1",
+    id: "schedule-1",
     centerId: 0,
-    templateId: scheduleTemplates[0].id,
+    templateId: "spring-schedule",
     addedByUserId: adminUser.id,
     dateCreated: createDate("2025-02-15", 10, 0),
     dateLastModified: createDate("2025-02-15", 10, 0),
@@ -41,7 +41,7 @@ export const schedules: Schedule[] = [
   },
   // Current schedules
   {
-    id: "schedule-1",
+    id: "schedule-blah-1",
     centerId: 0,
     templateId: scheduleTemplates[0].id,
     addedByUserId: adminUser.id,

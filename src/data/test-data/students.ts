@@ -1,5 +1,5 @@
 import { Student } from "@/types/main";
-import { gradeLevels } from "./static-data/grade-levels";
+import { gradeLevels } from "../static-data/grade-levels";
 
 export const students: Student[] = [
   {
@@ -14,7 +14,7 @@ export const students: Student[] = [
   {
     id: 2,
     centerId: 0,
-    firstName: "Liam",
+    firstName: "nigger",
     lastName: "Miller",
     gradeLevelId: gradeLevels.find((gl) => gl.name === "7")?.id || 0,
     isHomeworkHelp: true,

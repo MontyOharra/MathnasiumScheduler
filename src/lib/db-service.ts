@@ -257,6 +257,15 @@ export class DatabaseService {
     );
   }
 
+  async getSchedulesByCenterId(centerId: number): Promise<Schedule[]> {
+    this.checkElectron();
+    const results = await window.electron.database.getSchedulesByCenterId(centerId);
+    this.handleError(results);
+    return results.map((schedule: Record<string, unknown>) =>
+      snakeToCamel<Schedule>(schedule)
+    );
+  }
+
   async getSchedulesForDate(date: string): Promise<Schedule[]> {
     this.checkElectron();
     const results = await window.electron.database.getSchedulesByDate(date);

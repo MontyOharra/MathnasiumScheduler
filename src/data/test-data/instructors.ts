@@ -1,5 +1,4 @@
 import { Instructor } from "@/types/main";
-import { gradeLevels } from "./static-data/grade-levels";
 
 export const instructors: Instructor[] = [
   {

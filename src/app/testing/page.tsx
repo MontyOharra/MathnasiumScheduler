@@ -12,13 +12,13 @@ import {
   SessionRow,
 } from "@/types/main";
 
-import { students } from "@/data/students";
-import { instructors } from "@/data/instructors";
+import { students } from "@/data/test-data/students";
+import { instructors } from "@/data/test-data/instructors";
 import {
   scheduleTemplates,
   scheduleTemplateWeekdays,
-} from "@/data/schedule_templates";
-import { sessions } from "@/data/sessions";
+} from "@/data/test-data/schedule_templates";
+import { sessions } from "@/data/test-data/sessions";
 
 export default function Testing() {
   const [cells, setCells] = useState<CellType[]>([]);
