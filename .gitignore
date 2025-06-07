@@ -22,8 +22,6 @@
 /dist
 
 # Electron
-/main/**/*.js
-/main/**/*.js.map
 /dist_electron
 
 # misc
