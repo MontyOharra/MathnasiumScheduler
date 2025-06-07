@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ElectronProvider from "@/components/ElectronProvider";
+import Providers from "./providers";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,11 +29,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ElectronProvider>
-          <div className="flex h-screen">
-            <main className="flex-1 overflow-y-auto">{children}</main>
-          </div>
-        </ElectronProvider>
+        <Providers>
+            <div className="flex h-screen">
+              <main className="flex-1 overflow-y-auto">{children}</main>
+            </div>
+        </Providers>
       </body>
     </html>
   );

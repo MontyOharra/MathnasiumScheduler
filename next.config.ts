@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export", // Static export for Electron
+  output: "standalone", // Static export for Electron
   distDir: ".next",
   images: {
     unoptimized: true, // Required for static export

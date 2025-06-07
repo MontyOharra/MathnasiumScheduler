@@ -5,8 +5,10 @@ import ExpandableScheduleTable from "@/components/ExpandableScheduleTable";
 import { schedules } from "@/data/schedules";
 import { Schedule } from "@/types/main";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SchedulesPage() {
+  const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
   const [schedulesData, setSchedulesData] = useState<Schedule[]>([]);
 
@@ -19,7 +21,7 @@ export default function SchedulesPage() {
 
   const handleEdit = (schedule: Schedule) => {
     console.log("Edit schedule:", schedule);
-    // TODO: Implement edit functionality
+    router.push(`/dashboard/schedules/${schedule.id}/edit`);
   };
 
   const handlePrint = (schedule: Schedule) => {

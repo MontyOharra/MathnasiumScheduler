@@ -2,6 +2,7 @@
   "name": "mathnasium_scheduler_ts",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "main": "main/index.js",
   "scripts": {
     "dev": "next dev --turbopack",
@@ -17,6 +18,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@heroui/react": "^2.7.9",
     "@tanstack/react-table": "^8.21.3",
     "ag-grid-community": "^33.3.0",
     "ag-grid-react": "^33.3.0",
@@ -24,6 +26,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "electron-is-dev": "^2.0.0",
+    "framer-motion": "^12.16.0",
     "next": "15.3.1",
     "node-fetch": "^3.3.2",
     "react": "^19.0.0",

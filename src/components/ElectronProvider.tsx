@@ -53,13 +53,13 @@ export default function ElectronProvider({ children }: Props) {
         </div>
       ) : (
         <>
-          {!state.isElectron && (
+          {/*!state.isElectron && (
             <div className="bg-amber-100 p-4 text-amber-800 text-sm">
               <strong>Note:</strong> This application is designed to run as a
               desktop app with local data storage. Some features may not be
               available when running in a browser environment.
             </div>
-          )}
+          )*/}
           {children}
         </>
       )}

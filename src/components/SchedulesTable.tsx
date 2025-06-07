@@ -21,8 +21,13 @@ export default function SchedulesTable({
   onPrint,
   onDelete,
 }: SchedulesTableProps) {
+
   const formatDate = (date: Date) => {
     return format(date, "EEE, MM/dd/yy");
+  };
+
+  const handleEdit = (schedule: Schedule) => {
+    onEdit(schedule);
   };
 
   return (
@@ -65,7 +70,7 @@ export default function SchedulesTable({
               <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end space-x-3">
                   <button
-                    onClick={() => onEdit(schedule)}
+                    onClick={() => handleEdit(schedule)}
                     className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50"
                     title="Edit"
                   >

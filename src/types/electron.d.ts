@@ -56,6 +56,13 @@ interface ElectronAPI {
     getScheduleWithDetails: (scheduleId: string) => Promise<DbQueryResult>;
     getCellsForSchedule: (scheduleId: string) => Promise<DbQueryResult>;
   };
+  ipcRenderer: {
+    invoke(
+      channel: string,
+      table: string,
+      id?: string | number
+    ): Promise<unknown>;
+  };
 }
 
 // Augment the Window interface
