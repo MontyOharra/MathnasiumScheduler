@@ -22,8 +22,6 @@
 /dist
 
 # Electron
-/main/**/*.js
-/main/**/*.js.map
 /dist_electron
 
 # misc
@@ -50,5 +48,3 @@ next-env.d.ts
 *.db
 *.db-journal
 
-# Context directory (reference information)
-/context/
