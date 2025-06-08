@@ -27,7 +27,9 @@ function isErrorResult(result: unknown): result is DbResultError {
 // Check if we're in an Electron environment
 const isElectron = () => {
   return (
-    typeof window !== "undefined" && typeof window.electron !== "undefined"
+    typeof window !== "undefined" &&
+    typeof window.electron !== "undefined" &&
+    window.electron !== null
   );
 };
 
@@ -98,7 +100,8 @@ export class DatabaseService {
   // Check if we're in Electron and can access the database
   private checkElectron() {
     if (!isElectron()) {
-      throw new Error("This functionality requires Electron runtime");
+      // Return empty array or default values instead of throwing error
+      return [];
     }
   }
 
@@ -181,9 +184,7 @@ export class DatabaseService {
     );
   }
 
-  async getInstructorWithGradeLevels(
-    id: number
-  ): Promise<number> {
+  async getInstructorWithGradeLevels(id: number): Promise<number> {
     this.checkElectron();
 
     // TODO: Implement this
@@ -214,7 +215,7 @@ export class DatabaseService {
           grade_level: gradeLevel,
           center_id: (instructor as any).center?.id || instructor.centerId,
         };
-        
+
         await window.electron.database.insert(
           "instructor_grade_levels",
           gradeData
@@ -258,8 +259,12 @@ export class DatabaseService {
   }
 
   async getSchedulesByCenterId(centerId: number): Promise<Schedule[]> {
-    this.checkElectron();
-    const results = await window.electron.database.getSchedulesByCenterId(centerId);
+    if (!isElectron()) {
+      return []; // Return empty array in non-Electron environment
+    }
+    const results = await window.electron.database.getSchedulesByCenterId(
+      centerId
+    );
     this.handleError(results);
     return results.map((schedule: Record<string, unknown>) =>
       snakeToCamel<Schedule>(schedule)

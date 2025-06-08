@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Button } from "@heroui/react";
 import { useParams } from "next/navigation";
 import dbService from "@/lib/db-service";
 import {
@@ -142,7 +141,7 @@ const Schedule: React.FC = () => {
     <div>
       <div className="flex flex-row justify-between">
         <div>Weekday, 01/01/1970</div>
-        <Button>import</Button>
+        <button>import</button>
       </div>
       <div className="w-full overflow-x-auto">
         <table className="w-full border-collapse text-black">

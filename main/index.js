@@ -8,12 +8,14 @@ let mainWindow;
 let db = null;
 
 function createWindow() {
+  console.log("[Main] Creating main window...");
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.js"),
     },
   });
 
@@ -21,6 +23,7 @@ function createWindow() {
     ? "http://localhost:3000"
     : `file://${path.join(__dirname, "../.next/index.html")}`;
 
+  console.log("[Main] Loading URL:", startUrl);
   mainWindow.loadURL(startUrl);
 
   if (isDev) {
@@ -33,14 +36,15 @@ function createWindow() {
 }
 
 app.on("ready", () => {
+  console.log("[Main] App is ready, creating window...");
   createWindow();
 
   // Initialize the database
   try {
     db = initDatabase();
-    console.log("Database initialized successfully");
+    console.log("[Main] Database initialized successfully");
   } catch (error) {
-    console.error("Error initializing database:", error);
+    console.error("[Main] Error initializing database:", error);
   }
 });
 
@@ -62,25 +66,32 @@ app.on("activate", () => {
 });
 
 // Set up IPC handlers for database operations
-ipcMain.handle("database:getAll", async (_, table) => {
+console.log("[Main] Setting up IPC handlers...");
+
+ipcMain.handle("db-get-all", async (_, table) => {
+  console.log("[Main] Handling db-get-all for table:", table);
   try {
     if (!db) db = getDatabase();
     return db.prepare(`SELECT * FROM ${table}`).all();
   } catch (error) {
+    console.error("[Main] Error in db-get-all:", error);
     return { error: error.message };
   }
 });
 
-ipcMain.handle("database:getById", async (_, table, id) => {
+ipcMain.handle("db-get-by-id", async (_, table, id) => {
+  console.log("[Main] Handling db-get-by-id for table:", table, "id:", id);
   try {
     if (!db) db = getDatabase();
     return db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(id);
   } catch (error) {
+    console.error("[Main] Error in db-get-by-id:", error);
     return { error: error.message };
   }
 });
 
-ipcMain.handle("database:insert", async (_, table, data) => {
+ipcMain.handle("db-insert", async (_, table, data) => {
+  console.log("[Main] Handling db-insert for table:", table, "data:", data);
   try {
     if (!db) db = getDatabase();
 
@@ -96,11 +107,20 @@ ipcMain.handle("database:insert", async (_, table, data) => {
 
     return { id: result.lastInsertRowid };
   } catch (error) {
+    console.error("[Main] Error in db-insert:", error);
     return { error: error.message };
   }
 });
 
-ipcMain.handle("database:update", async (_, table, id, data) => {
+ipcMain.handle("db-update", async (_, table, id, data) => {
+  console.log(
+    "[Main] Handling db-update for table:",
+    table,
+    "id:",
+    id,
+    "data:",
+    data
+  );
   try {
     if (!db) db = getDatabase();
 
@@ -115,11 +135,13 @@ ipcMain.handle("database:update", async (_, table, id, data) => {
 
     return { changes: result.changes };
   } catch (error) {
+    console.error("[Main] Error in db-update:", error);
     return { error: error.message };
   }
 });
 
-ipcMain.handle("database:delete", async (_, table, id) => {
+ipcMain.handle("db-delete", async (_, table, id) => {
+  console.log("[Main] Handling db-delete for table:", table, "id:", id);
   try {
     if (!db) db = getDatabase();
 
@@ -127,11 +149,18 @@ ipcMain.handle("database:delete", async (_, table, id) => {
 
     return { changes: result.changes };
   } catch (error) {
+    console.error("[Main] Error in db-delete:", error);
     return { error: error.message };
   }
 });
 
-ipcMain.handle("database:query", async (_, query, params = []) => {
+ipcMain.handle("db-custom-query", async (_, query, params = []) => {
+  console.log(
+    "[Main] Handling db-custom-query with query:",
+    query,
+    "params:",
+    params
+  );
   try {
     if (!db) db = getDatabase();
 
@@ -141,6 +170,9 @@ ipcMain.handle("database:query", async (_, query, params = []) => {
       return db.prepare(query).run(...params);
     }
   } catch (error) {
+    console.error("[Main] Error in db-custom-query:", error);
     return { error: error.message };
   }
 });
+
+console.log("[Main] IPC handlers setup complete");

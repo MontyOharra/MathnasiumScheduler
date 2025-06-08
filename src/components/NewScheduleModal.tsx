@@ -1,55 +1,123 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { WeeklyScheduleTemplate } from "@/types/main";
-import { scheduleTemplates } from "@/data/test-data/schedule_templates";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, CalendarIcon } from "@heroicons/react/24/outline";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface NewScheduleModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onCreateNewSchedule: () => void;
+}
+
+interface DatabaseResult {
+  id?: string | number;
+  error?: string;
 }
 
 export default function NewScheduleModal({
   isOpen,
   onClose,
+  onCreateNewSchedule,
 }: NewScheduleModalProps) {
+  const [templates, setTemplates] = useState<WeeklyScheduleTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] =
     useState<WeeklyScheduleTemplate | null>(null);
   const [autoPopulate, setAutoPopulate] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Set the default template when the modal opens
+    // Fetch templates when the modal opens
     if (isOpen) {
-      const defaultTemplate = scheduleTemplates.find(
-        (template) => template.isDefault
-      );
-      if (defaultTemplate) {
-        setSelectedTemplate(defaultTemplate);
-      }
+      const fetchTemplates = async () => {
+        try {
+          const result = await window.electron.database.customQuery(
+            "SELECT * FROM weekly_schedule_template WHERE center_id = ?",
+            [1]
+          );
+
+          console.log("Database query result:", result);
+
+          // Ensure result is an array
+          const templatesArray = Array.isArray(result) ? result : [];
+          console.log("Templates array:", templatesArray);
+
+          setTemplates(templatesArray);
+
+          // Set default template if available
+          const defaultTemplate = templatesArray.find(
+            (template: WeeklyScheduleTemplate) => template.isDefault
+          );
+          console.log("Default template:", defaultTemplate);
+
+          if (defaultTemplate) {
+            setSelectedTemplate(defaultTemplate);
+          }
+        } catch (error) {
+          console.error("Error fetching templates:", error);
+        }
+      };
+
+      fetchTemplates();
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const handleCreateSchedule = async () => {
+    if (!selectedTemplate || !selectedDate) {
+      alert("Please select both a template and a date");
+      return;
+    }
 
-  const handleFileImport = () => {
-    fileInputRef.current?.click();
-  };
+    setIsLoading(true);
+    try {
+      // Create dates in local timezone
+      const now = new Date();
+      const currentDate = now.toISOString();
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type === "text/csv" || file.name.endsWith(".csv")) {
-        setSelectedFile(file);
-        console.log("Selected file:", file.name);
-      } else {
-        alert("Please select a CSV file");
-        setSelectedFile(null);
+      // Format the selected date
+      const formattedDate = selectedDate.toISOString().split("T")[0];
+
+      const scheduleData = {
+        template_id: selectedTemplate.id,
+        center_id: 1,
+        added_by_user_id: 1,
+        schedule_date: formattedDate,
+        date_created: currentDate,
+        date_last_modified: currentDate,
+      };
+
+      console.log("Creating schedule with data:", scheduleData);
+      const result = (await window.electron.database.insert(
+        "schedule",
+        scheduleData
+      )) as DatabaseResult;
+      console.log("Schedule creation result:", result);
+
+      if (result.error) {
+        throw new Error(result.error);
       }
+
+      // Close modal first to prevent any state updates after unmount
+      onClose();
+
+      // Then trigger the refresh
+      onCreateNewSchedule();
+    } catch (error) {
+      console.error("Error creating schedule:", error);
+      alert("Failed to create schedule. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -63,15 +131,6 @@ export default function NewScheduleModal({
         </button>
       </div>
 
-      {/* Hidden file input */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        accept=".csv"
-        className="hidden"
-      />
-
       {/* Modal */}
       <div className="relative bg-background rounded-lg shadow-2xl w-full max-w-2xl mx-4">
         <div className="p-8">
@@ -79,23 +138,27 @@ export default function NewScheduleModal({
             Create New Schedule
           </h2>
 
-          {/* Import Data Section */}
+          {/* Date Selection Section */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold mb-3 text-text">
-              Import Data
+              Select Date
             </h3>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleFileImport}
-                className="px-6 py-3 bg-primary text-text-light rounded-lg hover:bg-primary-hover transition-colors shadow-md"
-              >
-                Select CSV File
-              </button>
-              {selectedFile && (
-                <span className="text-text-muted">
-                  Selected: {selectedFile.name}
-                </span>
-              )}
+            <div className="relative">
+              <DatePicker
+                selected={selectedDate}
+                onChange={(date: Date) => setSelectedDate(date)}
+                minDate={new Date()}
+                dateFormat="MMMM d, yyyy"
+                className="w-full p-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-text pl-10"
+                wrapperClassName="w-full"
+                popperClassName="z-50"
+                popperPlacement="bottom-start"
+                customInput={
+                  <div className="relative">
+                    <CalendarIcon className="h-5 w-5 text-text-muted absolute left-3 top-1/2 transform -translate-y-1/2" />
+                  </div>
+                }
+              />
             </div>
           </div>
 
@@ -107,14 +170,15 @@ export default function NewScheduleModal({
             <select
               value={selectedTemplate?.id || ""}
               onChange={(e) => {
-                const template = scheduleTemplates.find(
-                  (t) => t.id === e.target.value
-                );
+                const template = templates.find((t) => t.id === e.target.value);
                 setSelectedTemplate(template || null);
               }}
               className="w-full p-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-text"
             >
-              {scheduleTemplates.map((template) => (
+              <option value="" className="text-text">
+                Select a template
+              </option>
+              {templates.map((template) => (
                 <option
                   key={template.id}
                   value={template.id}
@@ -145,17 +209,16 @@ export default function NewScheduleModal({
             <button
               onClick={onClose}
               className="px-6 py-3 text-text-muted border border-border rounded-lg hover:bg-primary-light transition-colors"
+              disabled={isLoading}
             >
               Cancel
             </button>
             <button
-              onClick={() => {
-                // TODO: Implement schedule creation
-                onClose();
-              }}
-              className="px-6 py-3 bg-primary text-text-light rounded-lg hover:bg-primary-hover transition-colors shadow-md"
+              onClick={handleCreateSchedule}
+              disabled={isLoading || !selectedTemplate || !selectedDate}
+              className="px-6 py-3 bg-primary text-text-light rounded-lg hover:bg-primary-hover transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Schedule
+              {isLoading ? "Creating..." : "Create Schedule"}
             </button>
           </div>
         </div>

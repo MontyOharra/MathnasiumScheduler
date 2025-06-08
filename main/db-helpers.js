@@ -12,33 +12,6 @@ app.log = app.log || console.log;
 app.error = app.error || console.error;
 
 /**
- * Reads a JSON data file
- * @param {string} filePath - Path to the JSON file
- * @returns {any} - Parsed data from the file
- */
-const readJsonFile = (filePath) => {
-  const fullPath = path.join(
-    __dirname,
-    "..",
-    "src",
-    "data",
-    "db-seed",
-    filePath
-  );
-  app.log(`Reading data file: ${fullPath}`);
-
-  try {
-    const content = fs.readFileSync(fullPath, "utf8");
-    const data = JSON.parse(content);
-    app.log(`Successfully parsed ${data.length} items from ${filePath}`);
-    return data;
-  } catch (error) {
-    app.error(`Error reading/parsing ${filePath}:`, error);
-    throw error;
-  }
-};
-
-/**
  * Creates all database tables with appropriate schema and constraints
  */
 const createTables = (db) => {
@@ -71,10 +44,7 @@ const createTables = (db) => {
       first_name TEXT NOT NULL,
       last_name TEXT NOT NULL,
       invited_by_id INTEGER,
-      is_active INTEGER NOT NULL,
-      FOREIGN KEY (center_id) REFERENCES center(id),
-      FOREIGN KEY (role_id) REFERENCES role(id),
-      FOREIGN KEY (invited_by_id) REFERENCES user(id)
+      is_active INTEGER NOT NULL
     )
   `);
   app.log("Created user table");
@@ -114,8 +84,7 @@ const createTables = (db) => {
       first_name TEXT NOT NULL,
       last_name TEXT NOT NULL,
       cell_color TEXT NOT NULL,
-      is_active INTEGER NOT NULL,
-      FOREIGN KEY (center_id) REFERENCES center(id)
+      is_active INTEGER NOT NULL
     )
   `);
   app.log("Created instructor table");
@@ -124,9 +93,7 @@ const createTables = (db) => {
     CREATE TABLE IF NOT EXISTS instructor_grade_level (
       instructor_id INTEGER NOT NULL,
       grade_level_id INTEGER NOT NULL,
-      PRIMARY KEY (instructor_id, grade_level_id),
-      FOREIGN KEY (instructor_id) REFERENCES instructor(id),
-      FOREIGN KEY (grade_level_id) REFERENCES grade_level(id)
+      PRIMARY KEY (instructor_id, grade_level_id)
     )
   `);
   app.log("Created instructor_grade_level table");
@@ -139,9 +106,7 @@ const createTables = (db) => {
       last_name TEXT NOT NULL,
       grade_level_id INTEGER NOT NULL,
       is_homework_help INTEGER NOT NULL,
-      is_active INTEGER NOT NULL,
-      FOREIGN KEY (center_id) REFERENCES center(id),
-      FOREIGN KEY (grade_level_id) REFERENCES grade_level(id)
+      is_active INTEGER NOT NULL
     )
   `);
   app.log("Created student table");
@@ -152,8 +117,7 @@ const createTables = (db) => {
       center_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       is_default INTEGER NOT NULL,
-      interval_length INTEGER NOT NULL,
-      FOREIGN KEY (center_id) REFERENCES center(id)
+      interval_length INTEGER NOT NULL
     )
   `);
   app.log("Created weekly_schedule_template table");
@@ -165,9 +129,7 @@ const createTables = (db) => {
       start_time TEXT NOT NULL,
       end_time TEXT NOT NULL,
       num_columns INTEGER NOT NULL,
-      PRIMARY KEY (template_id, weekday_id),
-      FOREIGN KEY (template_id) REFERENCES weekly_schedule_template(id),
-      FOREIGN KEY (weekday_id) REFERENCES weekday(id)
+      PRIMARY KEY (template_id, weekday_id)
     )
   `);
   app.log("Created weekly_schedule_template_weekday table");
@@ -180,10 +142,7 @@ const createTables = (db) => {
       added_by_user_id INTEGER NOT NULL,
       date_created TEXT NOT NULL,
       date_last_modified TEXT NOT NULL,
-      schedule_date TEXT NOT NULL,
-      FOREIGN KEY (center_id) REFERENCES center(id),
-      FOREIGN KEY (template_id) REFERENCES weekly_schedule_template(id),
-      FOREIGN KEY (added_by_user_id) REFERENCES user(id)
+      schedule_date TEXT NOT NULL
     )
   `);
   app.log("Created schedule table");
@@ -192,9 +151,7 @@ const createTables = (db) => {
     CREATE TABLE IF NOT EXISTS schedule_session (
       schedule_id TEXT NOT NULL,
       session_id INTEGER NOT NULL,
-      PRIMARY KEY (schedule_id, session_id),
-      FOREIGN KEY (schedule_id) REFERENCES schedule(id),
-      FOREIGN KEY (session_id) REFERENCES session(id)
+      PRIMARY KEY (schedule_id, session_id)
     )
   `);
   app.log("Created schedule_session table");
@@ -205,10 +162,7 @@ const createTables = (db) => {
       center_id INTEGER NOT NULL,
       student_id INTEGER NOT NULL,
       session_type_id INTEGER NOT NULL,
-      date TEXT NOT NULL,
-      FOREIGN KEY (center_id) REFERENCES center(id),
-      FOREIGN KEY (student_id) REFERENCES student(id),
-      FOREIGN KEY (session_type_id) REFERENCES session_type(id)
+      date TEXT NOT NULL
     )
   `);
   app.log("Created session table");
@@ -222,11 +176,7 @@ const createTables = (db) => {
       student_id INTEGER NOT NULL,
       time_start TEXT NOT NULL,
       time_end TEXT NOT NULL,
-      column_number INTEGER NOT NULL,
-      FOREIGN KEY (center_id) REFERENCES center(id),
-      FOREIGN KEY (schedule_id) REFERENCES schedule(id),
-      FOREIGN KEY (instructor_id) REFERENCES instructor(id),
-      FOREIGN KEY (student_id) REFERENCES student(id)
+      column_number INTEGER NOT NULL
     )
   `);
   app.log("Created cell table");
@@ -370,75 +320,6 @@ const populateTestData = (db) => {
     center.name
   );
   app.log("Inserted test center");
-
-  // 2. Insert roles (needed for users)
-  const roles = [
-    { id: 1, code: "ADMIN", description: "Administrator" },
-    { id: 2, code: "INSTRUCTOR", description: "Instructor" },
-  ];
-  const insertRole = db.prepare(
-    "INSERT INTO role (id, code, description) VALUES (?, ?, ?)"
-  );
-  roles.forEach((role) => {
-    insertRole.run(role.id, role.code, role.description);
-  });
-  app.log("Inserted roles");
-
-  // 3. Insert grade levels (needed for students and instructors)
-  const gradeLevels = [
-    { id: 1, name: "Kindergarten" },
-    { id: 2, name: "1st Grade" },
-    { id: 3, name: "2nd Grade" },
-    { id: 4, name: "3rd Grade" },
-    { id: 5, name: "4th Grade" },
-    { id: 6, name: "5th Grade" },
-    { id: 7, name: "6th Grade" },
-    { id: 8, name: "7th Grade" },
-    { id: 9, name: "8th Grade" },
-    { id: 10, name: "9th Grade" },
-    { id: 11, name: "10th Grade" },
-    { id: 12, name: "11th Grade" },
-    { id: 13, name: "12th Grade" },
-  ];
-  const insertGradeLevel = db.prepare(
-    "INSERT INTO grade_level (id, name) VALUES (?, ?)"
-  );
-  gradeLevels.forEach((level) => {
-    insertGradeLevel.run(level.id, level.name);
-  });
-  app.log("Inserted grade levels");
-
-  // 4. Insert session types (needed for sessions)
-  const sessionTypes = [
-    { id: 1, code: "REGULAR", length: 60, styling: "regular" },
-    { id: 2, code: "MAKEUP", length: 60, styling: "makeup" },
-    { id: 3, code: "HOMEWORK", length: 30, styling: "homework" },
-  ];
-  const insertSessionType = db.prepare(
-    "INSERT INTO session_type (id, code, length, styling) VALUES (?, ?, ?, ?)"
-  );
-  sessionTypes.forEach((type) => {
-    insertSessionType.run(type.id, type.code, type.length, type.styling);
-  });
-  app.log("Inserted session types");
-
-  // 5. Insert weekdays (needed for schedule templates)
-  const weekdays = [
-    { id: 1, name: "Monday" },
-    { id: 2, name: "Tuesday" },
-    { id: 3, name: "Wednesday" },
-    { id: 4, name: "Thursday" },
-    { id: 5, name: "Friday" },
-    { id: 6, name: "Saturday" },
-    { id: 7, name: "Sunday" },
-  ];
-  const insertWeekday = db.prepare(
-    "INSERT INTO weekday (id, name) VALUES (?, ?)"
-  );
-  weekdays.forEach((day) => {
-    insertWeekday.run(day.id, day.name);
-  });
-  app.log("Inserted weekdays");
 
   // 6. Insert admin user (needed for schedules)
   const adminUser = {

@@ -20,6 +20,7 @@
     "@heroicons/react": "^2.2.0",
     "@heroui/react": "^2.7.9",
     "@tanstack/react-table": "^8.21.3",
+    "@types/react-datepicker": "^7.0.0",
     "ag-grid-community": "^33.3.0",
     "ag-grid-react": "^33.3.0",
     "better-sqlite3": "^9.6.0",
@@ -30,6 +31,7 @@
     "next": "15.3.1",
     "node-fetch": "^3.3.2",
     "react": "^19.0.0",
+    "react-datepicker": "^8.4.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.2.0",
     "zustand": "^5.0.3"

@@ -35,6 +35,12 @@ const initDatabase = () => {
   app.log(`Initializing database at: ${dbPath}`);
 
   try {
+    // Delete database file in development mode
+    if (isDev && fs.existsSync(dbPath)) {
+      app.log("Development mode: Deleting existing database file");
+      fs.unlinkSync(dbPath);
+    }
+
     // Ensure directory exists for production
     if (!isDev) {
       const dir = path.dirname(dbPath);

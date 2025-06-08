@@ -6,20 +6,27 @@ import { Schedule } from "@/types/main";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dbService from "@/lib/db-service";
+import { useElectron } from "@/components/ElectronProvider";
 
 export default function SchedulesPage() {
   const router = useRouter();
+  const { isElectron } = useElectron();
   const [isLoaded, setIsLoaded] = useState(false);
   const [schedulesData, setSchedulesData] = useState<Schedule[]>([]);
 
-  useEffect(() => {
-    
-    async function fetchSchedules() {
-      const schedules = await dbService.getSchedulesByCenterId(0);
+  const fetchSchedules = async () => {
+    try {
+      const schedules = await dbService.getSchedulesByCenterId(1);
       setSchedulesData(schedules || []);
+    } catch (error) {
+      console.error("Error fetching schedules:", error);
+      setSchedulesData([]);
+    } finally {
       setIsLoaded(true);
     }
+  };
 
+  useEffect(() => {
     fetchSchedules();
   }, []);
 
@@ -51,11 +58,27 @@ export default function SchedulesPage() {
     return <div>Loading schedules...</div>;
   }
 
+  if (!isElectron) {
+    return (
+      <div className="w-full max-w-full">
+        <div className="flex flex-row items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold text-text">Schedules</h1>
+        </div>
+        <div className="bg-amber-100 p-4 text-amber-800 rounded-md">
+          <p>This feature requires the desktop application to be running.</p>
+          <p>
+            Please launch the application using Electron to access schedules.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-full">
       <div className="flex flex-row items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-text">Schedules</h1>
-        <NewScheduleButton />
+        <NewScheduleButton onScheduleCreated={fetchSchedules} />
       </div>
       <div className="space-y-6">
         <ExpandableScheduleTable

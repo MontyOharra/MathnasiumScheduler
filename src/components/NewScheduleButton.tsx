@@ -4,8 +4,21 @@ import { useState } from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import NewScheduleModal from "./NewScheduleModal";
 
-export default function NewScheduleButton() {
+interface NewScheduleButtonProps {
+  onScheduleCreated?: () => void;
+}
+
+export default function NewScheduleButton({
+  onScheduleCreated,
+}: NewScheduleButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCreateNewSchedule = () => {
+    setIsModalOpen(false);
+    if (onScheduleCreated) {
+      onScheduleCreated();
+    }
+  };
 
   return (
     <>
@@ -20,6 +33,7 @@ export default function NewScheduleButton() {
       <NewScheduleModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onCreateNewSchedule={handleCreateNewSchedule}
       />
     </>
   );
