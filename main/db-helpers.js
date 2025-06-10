@@ -1,11 +1,5 @@
-/**
- * Database Initialization Helper Functions
- * This file contains functions for setting up and populating the database.
- */
-
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { app } = require("electron");
-const path = require("path");
-const fs = require("fs");
 
 // Use app.log for main process logging
 app.log = app.log || console.log;
@@ -15,8 +9,6 @@ app.error = app.error || console.error;
  * Creates all database tables with appropriate schema and constraints
  */
 const createTables = (db) => {
-  app.log("Creating database tables...");
-
   // Orgs & Access-Control Layer
   db.exec(`
     CREATE TABLE IF NOT EXISTS center (
@@ -24,8 +16,6 @@ const createTables = (db) => {
       name TEXT NOT NULL
     )
   `);
-  app.log("Created center table");
-
   db.exec(`
     CREATE TABLE IF NOT EXISTS role (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +23,6 @@ const createTables = (db) => {
       description TEXT NOT NULL
     )
   `);
-  app.log("Created role table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS user (
@@ -47,7 +36,6 @@ const createTables = (db) => {
       is_active INTEGER NOT NULL
     )
   `);
-  app.log("Created user table");
 
   // Lookups
   db.exec(`
@@ -56,7 +44,6 @@ const createTables = (db) => {
       name TEXT NOT NULL
     )
   `);
-  app.log("Created grade_level table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS session_type (
@@ -66,7 +53,6 @@ const createTables = (db) => {
       styling TEXT NOT NULL
     )
   `);
-  app.log("Created session_type table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS weekday (
@@ -74,7 +60,6 @@ const createTables = (db) => {
       name TEXT NOT NULL
     )
   `);
-  app.log("Created weekday table");
 
   // Core domain tables
   db.exec(`
@@ -87,7 +72,6 @@ const createTables = (db) => {
       is_active INTEGER NOT NULL
     )
   `);
-  app.log("Created instructor table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS instructor_grade_level (
@@ -96,7 +80,6 @@ const createTables = (db) => {
       PRIMARY KEY (instructor_id, grade_level_id)
     )
   `);
-  app.log("Created instructor_grade_level table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS student (
@@ -105,11 +88,11 @@ const createTables = (db) => {
       first_name TEXT NOT NULL,
       last_name TEXT NOT NULL,
       grade_level_id INTEGER NOT NULL,
+      default_session_type_id INTEGER NOT NULL,
       is_homework_help INTEGER NOT NULL,
       is_active INTEGER NOT NULL
     )
   `);
-  app.log("Created student table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS weekly_schedule_template (
@@ -120,7 +103,6 @@ const createTables = (db) => {
       interval_length INTEGER NOT NULL
     )
   `);
-  app.log("Created weekly_schedule_template table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS weekly_schedule_template_weekday (
@@ -132,7 +114,6 @@ const createTables = (db) => {
       PRIMARY KEY (template_id, weekday_id)
     )
   `);
-  app.log("Created weekly_schedule_template_weekday table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS schedule (
@@ -145,7 +126,6 @@ const createTables = (db) => {
       schedule_date TEXT NOT NULL
     )
   `);
-  app.log("Created schedule table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS schedule_session (
@@ -154,7 +134,6 @@ const createTables = (db) => {
       PRIMARY KEY (schedule_id, session_id)
     )
   `);
-  app.log("Created schedule_session table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS session (
@@ -165,7 +144,6 @@ const createTables = (db) => {
       date TEXT NOT NULL
     )
   `);
-  app.log("Created session table");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS cell (
@@ -179,15 +157,12 @@ const createTables = (db) => {
       column_number INTEGER NOT NULL
     )
   `);
-  app.log("Created cell table");
 };
 
 /**
  * Populates lookup tables with initial values
  */
 const populateLookupTables = (db) => {
-  app.log("Starting to populate lookup tables...");
-
   // Populate weekdays if empty
   const weekdayCount = db
     .prepare("SELECT COUNT(*) as count FROM weekday")
@@ -209,8 +184,6 @@ const populateLookupTables = (db) => {
     for (const weekday of weekdays) {
       insertWeekday.run(weekday.name);
     }
-
-    app.log("Weekdays populated successfully");
   }
 
   // Populate grade levels if empty
@@ -267,8 +240,6 @@ const populateLookupTables = (db) => {
     for (const gradeLevel of gradeLevels) {
       insertGradeLevel.run(gradeLevel.name);
     }
-
-    app.log("Grade levels populated successfully");
   }
 
   // Optionally populate default roles if empty
@@ -299,8 +270,59 @@ const populateLookupTables = (db) => {
     for (const role of roles) {
       insertRole.run(role.code, role.description);
     }
+  }
 
-    app.log("Default roles populated successfully");
+  // Populate session types if empty
+  const sessionTypeCount = db
+    .prepare("SELECT COUNT(*) as count FROM session_type")
+    .get();
+
+  if (sessionTypeCount.count === 0) {
+    const sessionTypes = [
+      {
+        id: 1,
+        code: "REGULAR",
+        length: 60,
+        styling: "default",
+      },
+      {
+        id: 2,
+        code: "HOMEWORK HELP",
+        length: 60,
+        styling: "homework-help",
+      },
+      {
+        id: 3,
+        code: "INITIAL ASSESSMENT",
+        length: 90,
+        styling: "initial-assessment",
+      },
+      {
+        id: 4,
+        code: "CHECKUP",
+        length: 60,
+        styling: "checkup",
+      },
+      {
+        id: 5,
+        code: "ONE-ON-ONE",
+        length: 90,
+        styling: "one-on-one",
+      },
+    ];
+
+    const insertSessionType = db.prepare(
+      "INSERT INTO session_type (id, code, length, styling) VALUES (?, ?, ?, ?)"
+    );
+
+    for (const sessionType of sessionTypes) {
+      insertSessionType.run(
+        sessionType.id,
+        sessionType.code,
+        sessionType.length,
+        sessionType.styling
+      );
+    }
   }
 };
 
@@ -308,8 +330,6 @@ const populateLookupTables = (db) => {
  * Populates the database with test data
  */
 const populateTestData = (db) => {
-  app.log("Starting to populate test data...");
-
   // 1. First, insert the center (parent table)
   const center = {
     id: 1,
@@ -319,7 +339,6 @@ const populateTestData = (db) => {
     center.id,
     center.name
   );
-  app.log("Inserted test center");
 
   // 6. Insert admin user (needed for schedules)
   const adminUser = {
@@ -344,7 +363,6 @@ const populateTestData = (db) => {
     adminUser.invited_by_id,
     adminUser.is_active
   );
-  app.log("Inserted admin user");
 
   // 7. Insert schedule templates
   const templates = [
@@ -375,7 +393,6 @@ const populateTestData = (db) => {
       template.interval_length
     );
   });
-  app.log("Inserted schedule templates");
 
   // 8. Insert schedule template weekdays
   const templateWeekdays = [
@@ -427,7 +444,6 @@ const populateTestData = (db) => {
       weekday.num_columns
     );
   });
-  app.log("Inserted schedule template weekdays");
 
   // 9. Insert instructors
   const instructors = [
@@ -485,7 +501,6 @@ const populateTestData = (db) => {
       instructor.is_active
     );
   });
-  app.log("Inserted instructors");
 
   // 10. Insert students
   const students = [
@@ -495,6 +510,7 @@ const populateTestData = (db) => {
       first_name: "Emma",
       last_name: "Thompson",
       grade_level_id: 5,
+      default_session_type_id: 1,
       is_homework_help: 0,
       is_active: 1,
     },
@@ -504,6 +520,7 @@ const populateTestData = (db) => {
       first_name: "Liam",
       last_name: "Anderson",
       grade_level_id: 6,
+      default_session_type_id: 1,
       is_homework_help: 1,
       is_active: 1,
     },
@@ -513,6 +530,7 @@ const populateTestData = (db) => {
       first_name: "Olivia",
       last_name: "Martinez",
       grade_level_id: 4,
+      default_session_type_id: 1,
       is_homework_help: 0,
       is_active: 1,
     },
@@ -522,6 +540,7 @@ const populateTestData = (db) => {
       first_name: "Noah",
       last_name: "Taylor",
       grade_level_id: 7,
+      default_session_type_id: 1,
       is_homework_help: 1,
       is_active: 1,
     },
@@ -531,6 +550,7 @@ const populateTestData = (db) => {
       first_name: "Ava",
       last_name: "Thomas",
       grade_level_id: 5,
+      default_session_type_id: 1,
       is_homework_help: 0,
       is_active: 1,
     },
@@ -540,6 +560,7 @@ const populateTestData = (db) => {
       first_name: "Ethan",
       last_name: "Hernandez",
       grade_level_id: 6,
+      default_session_type_id: 1,
       is_homework_help: 1,
       is_active: 1,
     },
@@ -549,6 +570,7 @@ const populateTestData = (db) => {
       first_name: "Sophia",
       last_name: "Moore",
       grade_level_id: 4,
+      default_session_type_id: 1,
       is_homework_help: 0,
       is_active: 1,
     },
@@ -558,6 +580,7 @@ const populateTestData = (db) => {
       first_name: "Mason",
       last_name: "Martin",
       grade_level_id: 7,
+      default_session_type_id: 1,
       is_homework_help: 1,
       is_active: 1,
     },
@@ -567,6 +590,7 @@ const populateTestData = (db) => {
       first_name: "Isabella",
       last_name: "Jackson",
       grade_level_id: 5,
+      default_session_type_id: 1,
       is_homework_help: 0,
       is_active: 1,
     },
@@ -576,6 +600,7 @@ const populateTestData = (db) => {
       first_name: "William",
       last_name: "Thompson",
       grade_level_id: 6,
+      default_session_type_id: 1,
       is_homework_help: 1,
       is_active: 1,
     },
@@ -585,6 +610,7 @@ const populateTestData = (db) => {
       first_name: "Mia",
       last_name: "White",
       grade_level_id: 4,
+      default_session_type_id: 1,
       is_homework_help: 0,
       is_active: 1,
     },
@@ -594,6 +620,7 @@ const populateTestData = (db) => {
       first_name: "James",
       last_name: "Harris",
       grade_level_id: 7,
+      default_session_type_id: 1,
       is_homework_help: 1,
       is_active: 1,
     },
@@ -603,6 +630,7 @@ const populateTestData = (db) => {
       first_name: "Charlotte",
       last_name: "Clark",
       grade_level_id: 5,
+      default_session_type_id: 1,
       is_homework_help: 0,
       is_active: 1,
     },
@@ -612,6 +640,7 @@ const populateTestData = (db) => {
       first_name: "Benjamin",
       last_name: "Lewis",
       grade_level_id: 6,
+      default_session_type_id: 1,
       is_homework_help: 1,
       is_active: 1,
     },
@@ -621,6 +650,7 @@ const populateTestData = (db) => {
       first_name: "Amelia",
       last_name: "Robinson",
       grade_level_id: 4,
+      default_session_type_id: 1,
       is_homework_help: 0,
       is_active: 1,
     },
@@ -630,6 +660,7 @@ const populateTestData = (db) => {
       first_name: "Lucas",
       last_name: "Walker",
       grade_level_id: 7,
+      default_session_type_id: 1,
       is_homework_help: 1,
       is_active: 1,
     },
@@ -639,6 +670,7 @@ const populateTestData = (db) => {
       first_name: "Harper",
       last_name: "Young",
       grade_level_id: 5,
+      default_session_type_id: 1,
       is_homework_help: 0,
       is_active: 1,
     },
@@ -648,12 +680,13 @@ const populateTestData = (db) => {
       first_name: "Henry",
       last_name: "Allen",
       grade_level_id: 6,
+      default_session_type_id: 1,
       is_homework_help: 1,
       is_active: 1,
     },
   ];
   const insertStudent = db.prepare(
-    "INSERT INTO student (id, center_id, first_name, last_name, grade_level_id, is_homework_help, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO student (id, center_id, first_name, last_name, grade_level_id, default_session_type_id, is_homework_help, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
   );
   students.forEach((student) => {
     insertStudent.run(
@@ -662,11 +695,11 @@ const populateTestData = (db) => {
       student.first_name,
       student.last_name,
       student.grade_level_id,
+      student.default_session_type_id,
       student.is_homework_help,
       student.is_active
     );
   });
-  app.log("Inserted students");
 
   // 11. Insert schedules
   const schedules = [
@@ -748,7 +781,6 @@ const populateTestData = (db) => {
       schedule.schedule_date
     );
   });
-  app.log("Inserted schedules");
 
   // 12. Insert sessions
   const sessions = [
@@ -891,7 +923,6 @@ const populateTestData = (db) => {
       session.date
     );
   });
-  app.log("Inserted sessions");
 
   // 13. Insert schedule sessions
   const scheduleSessions = sessions.map((session) => ({
@@ -907,9 +938,6 @@ const populateTestData = (db) => {
       scheduleSession.session_id
     );
   });
-  app.log("Inserted schedule sessions");
-
-  app.log("Test data population completed successfully");
 };
 
 module.exports = {

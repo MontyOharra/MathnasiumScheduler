@@ -29,23 +29,34 @@ interface ElectronAPI {
     getCenters: () => Promise<DbQueryResult>;
     addCenter: (data: Record<string, unknown>) => Promise<{ id: number }>;
 
-    getInstructors: () => Promise<DbQueryResult>;
-    getActiveInstructors: () => Promise<DbQueryResult>;
+    getInstructors: (centerId: number) => Promise<DbQueryResult>;
+    getActiveInstructors: (centerId: number) => Promise<DbQueryResult>;
 
-    getStudents: () => Promise<DbQueryResult>;
-    getActiveStudents: () => Promise<DbQueryResult>;
+    getStudents: (centerId: number) => Promise<DbQueryResult>;
+    getActiveStudents: (centerId: number) => Promise<DbQueryResult>;
+    getStudentsWithDetails: (centerId: number) => Promise<DbQueryResult>;
 
-    getScheduleTemplates: () => Promise<DbQueryResult>;
+    getScheduleTemplates: (centerId: number) => Promise<DbQueryResult>;
     getDefaultTemplate: (centerId: number) => Promise<DbQueryResult>;
 
     getSchedulesByCenterId: (centerId: number) => Promise<DbQueryResult>;
-    getSchedulesByDate: (date: string) => Promise<DbQueryResult>;
+    getSchedulesByDate: (
+      date: string,
+      centerId: number
+    ) => Promise<DbQueryResult>;
 
     getInstructorWithGradeLevels: (
-      instructorId: number
+      instructorId: number,
+      centerId: number
     ) => Promise<DbQueryResult>;
-    getScheduleWithDetails: (scheduleId: string) => Promise<DbQueryResult>;
-    getCellsForSchedule: (scheduleId: string) => Promise<DbQueryResult>;
+    getScheduleWithDetails: (
+      scheduleId: string,
+      centerId: number
+    ) => Promise<DbQueryResult>;
+    getCellsForSchedule: (
+      scheduleId: string,
+      centerId: number
+    ) => Promise<DbQueryResult>;
   };
 }
 

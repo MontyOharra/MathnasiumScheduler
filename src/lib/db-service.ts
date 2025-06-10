@@ -166,29 +166,36 @@ export class DatabaseService {
   }
 
   // Instructors
-  async getInstructors(): Promise<Instructor[]> {
+  async getInstructors(centerId: number): Promise<Instructor[]> {
     this.checkElectron();
-    const results = await window.electron.database.getInstructors();
+    const results = await window.electron.database.getInstructors(centerId);
     this.handleError(results);
     return results.map((instructor: Record<string, unknown>) =>
       snakeToCamel<Instructor>(instructor)
     );
   }
 
-  async getActiveInstructors(): Promise<Instructor[]> {
+  async getActiveInstructors(centerId: number): Promise<Instructor[]> {
     this.checkElectron();
-    const results = await window.electron.database.getActiveInstructors();
+    const results = await window.electron.database.getActiveInstructors(
+      centerId
+    );
     this.handleError(results);
     return results.map((instructor: Record<string, unknown>) =>
       snakeToCamel<Instructor>(instructor)
     );
   }
 
-  async getInstructorWithGradeLevels(id: number): Promise<number> {
+  async getInstructorWithGradeLevels(
+    id: number,
+    centerId: number
+  ): Promise<number> {
     this.checkElectron();
-
-    // TODO: Implement this
-
+    const result = await window.electron.database.getInstructorWithGradeLevels(
+      id,
+      centerId
+    );
+    this.handleError(result);
     return id;
   }
 
@@ -230,28 +237,55 @@ export class DatabaseService {
   }
 
   // Students
-  async getStudents(): Promise<Student[]> {
+  async getStudents(centerId: number): Promise<Student[]> {
     this.checkElectron();
-    const results = await window.electron.database.getStudents();
+    const results = await window.electron.database.getStudents(centerId);
     this.handleError(results);
     return results.map((student: Record<string, unknown>) =>
       snakeToCamel<Student>(student)
     );
   }
 
-  async getActiveStudents(): Promise<Student[]> {
+  async getActiveStudents(centerId: number): Promise<Student[]> {
     this.checkElectron();
-    const results = await window.electron.database.getActiveStudents();
+    const results = await window.electron.database.getActiveStudents(centerId);
     this.handleError(results);
     return results.map((student: Record<string, unknown>) =>
       snakeToCamel<Student>(student)
+    );
+  }
+
+  async getStudentsWithDetails(centerId: number): Promise<
+    (Student & {
+      gradeLevelName: string;
+      sessionTypeCode: string;
+      sessionTypeLength: number;
+    })[]
+  > {
+    this.checkElectron();
+    const results = await window.electron.database.getStudentsWithDetails(
+      centerId
+    );
+    this.handleError(results);
+    return results.map((student: Record<string, unknown>) =>
+      snakeToCamel<
+        Student & {
+          gradeLevelName: string;
+          sessionTypeCode: string;
+          sessionTypeLength: number;
+        }
+      >(student)
     );
   }
 
   // Schedules
-  async getScheduleTemplates(): Promise<WeeklyScheduleTemplate[]> {
+  async getScheduleTemplates(
+    centerId: number
+  ): Promise<WeeklyScheduleTemplate[]> {
     this.checkElectron();
-    const results = await window.electron.database.getScheduleTemplates();
+    const results = await window.electron.database.getScheduleTemplates(
+      centerId
+    );
     this.handleError(results);
     return results.map((template: Record<string, unknown>) =>
       snakeToCamel<WeeklyScheduleTemplate>(template)
@@ -271,16 +305,25 @@ export class DatabaseService {
     );
   }
 
-  async getSchedulesForDate(date: string): Promise<Schedule[]> {
+  async getSchedulesForDate(
+    date: string,
+    centerId: number
+  ): Promise<Schedule[]> {
     this.checkElectron();
-    const results = await window.electron.database.getSchedulesByDate(date);
+    const results = await window.electron.database.getSchedulesByDate(
+      date,
+      centerId
+    );
     this.handleError(results);
     return results.map((schedule: Record<string, unknown>) =>
       snakeToCamel<Schedule>(schedule)
     );
   }
 
-  async getScheduleWithDetails(id: string): Promise<
+  async getScheduleWithDetails(
+    id: string,
+    centerId: number
+  ): Promise<
     Schedule & {
       templateName: string;
       numPods: number;
@@ -289,7 +332,10 @@ export class DatabaseService {
     }
   > {
     this.checkElectron();
-    const result = await window.electron.database.getScheduleWithDetails(id);
+    const result = await window.electron.database.getScheduleWithDetails(
+      id,
+      centerId
+    );
     this.handleError(result);
     return snakeToCamel<
       Schedule & {
@@ -302,7 +348,10 @@ export class DatabaseService {
   }
 
   // Cells (instructor-student assignments)
-  async getCellsForSchedule(scheduleId: string): Promise<
+  async getCellsForSchedule(
+    scheduleId: string,
+    centerId: number
+  ): Promise<
     (Cell & {
       instructorFirstName: string;
       instructorLastName: string;
@@ -312,7 +361,8 @@ export class DatabaseService {
   > {
     this.checkElectron();
     const results = await window.electron.database.getCellsForSchedule(
-      scheduleId
+      scheduleId,
+      centerId
     );
     this.handleError(results);
     return results.map((cell: Record<string, unknown>) =>

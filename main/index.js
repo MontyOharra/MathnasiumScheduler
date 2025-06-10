@@ -6,9 +6,11 @@ const { initDatabase, getDatabase, closeDatabase } = require("./db");
 
 let mainWindow;
 let db = null;
+let retryCount = 0;
+const MAX_RETRIES = 5;
+const RETRY_DELAY = 2000; // 2 seconds
 
 function createWindow() {
-  console.log("[Main] Creating main window...");
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -23,8 +25,11 @@ function createWindow() {
     ? "http://localhost:3000"
     : `file://${path.join(__dirname, "../.next/index.html")}`;
 
-  console.log("[Main] Loading URL:", startUrl);
-  mainWindow.loadURL(startUrl);
+  if (isDev) {
+    loadDevServer();
+  } else {
+    mainWindow.loadURL(startUrl);
+  }
 
   if (isDev) {
     mainWindow.webContents.openDevTools();
@@ -35,14 +40,35 @@ function createWindow() {
   });
 }
 
+function loadDevServer() {
+  const startUrl = "http://localhost:3000";
+
+  mainWindow.loadURL(startUrl).catch((error) => {
+    console.error("[Main] Failed to load development server:", error);
+
+    if (retryCount < MAX_RETRIES) {
+      retryCount++;
+      console.log(
+        `[Main] Retrying in ${
+          RETRY_DELAY / 1000
+        } seconds... (Attempt ${retryCount}/${MAX_RETRIES})`
+      );
+      setTimeout(loadDevServer, RETRY_DELAY);
+    } else {
+      console.error(
+        "[Main] Failed to connect to development server after maximum retries"
+      );
+      mainWindow.loadFile(path.join(__dirname, "../.next/index.html"));
+    }
+  });
+}
+
 app.on("ready", () => {
-  console.log("[Main] App is ready, creating window...");
   createWindow();
 
   // Initialize the database
   try {
     db = initDatabase();
-    console.log("[Main] Database initialized successfully");
   } catch (error) {
     console.error("[Main] Error initializing database:", error);
   }
@@ -66,10 +92,7 @@ app.on("activate", () => {
 });
 
 // Set up IPC handlers for database operations
-console.log("[Main] Setting up IPC handlers...");
-
 ipcMain.handle("db-get-all", async (_, table) => {
-  console.log("[Main] Handling db-get-all for table:", table);
   try {
     if (!db) db = getDatabase();
     return db.prepare(`SELECT * FROM ${table}`).all();
@@ -80,7 +103,6 @@ ipcMain.handle("db-get-all", async (_, table) => {
 });
 
 ipcMain.handle("db-get-by-id", async (_, table, id) => {
-  console.log("[Main] Handling db-get-by-id for table:", table, "id:", id);
   try {
     if (!db) db = getDatabase();
     return db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(id);
@@ -91,7 +113,6 @@ ipcMain.handle("db-get-by-id", async (_, table, id) => {
 });
 
 ipcMain.handle("db-insert", async (_, table, data) => {
-  console.log("[Main] Handling db-insert for table:", table, "data:", data);
   try {
     if (!db) db = getDatabase();
 
@@ -113,14 +134,6 @@ ipcMain.handle("db-insert", async (_, table, data) => {
 });
 
 ipcMain.handle("db-update", async (_, table, id, data) => {
-  console.log(
-    "[Main] Handling db-update for table:",
-    table,
-    "id:",
-    id,
-    "data:",
-    data
-  );
   try {
     if (!db) db = getDatabase();
 
@@ -141,7 +154,6 @@ ipcMain.handle("db-update", async (_, table, id, data) => {
 });
 
 ipcMain.handle("db-delete", async (_, table, id) => {
-  console.log("[Main] Handling db-delete for table:", table, "id:", id);
   try {
     if (!db) db = getDatabase();
 
@@ -155,12 +167,6 @@ ipcMain.handle("db-delete", async (_, table, id) => {
 });
 
 ipcMain.handle("db-custom-query", async (_, query, params = []) => {
-  console.log(
-    "[Main] Handling db-custom-query with query:",
-    query,
-    "params:",
-    params
-  );
   try {
     if (!db) db = getDatabase();
 
@@ -174,5 +180,3 @@ ipcMain.handle("db-custom-query", async (_, query, params = []) => {
     return { error: error.message };
   }
 });
-
-console.log("[Main] IPC handlers setup complete");

@@ -32,7 +32,6 @@ const initDatabase = () => {
   app.log = app.log || console.log;
   app.error = app.error || console.error;
 
-  app.log(`Initializing database at: ${dbPath}`);
 
   try {
     // Delete database file in development mode
@@ -51,28 +50,18 @@ const initDatabase = () => {
 
     // Create/open database connection
     db = new Database(dbPath);
-    app.log("Database connection established");
 
     // Enable foreign keys
     db.pragma("foreign_keys = ON");
-    app.log("Foreign keys enabled");
 
     // Create tables using the helper function
-    app.log("Creating database tables...");
     createTables(db);
-    app.log("Tables created successfully");
-
     // Populate lookup tables using the helper function
-    app.log("Populating lookup tables...");
     populateLookupTables(db);
-    app.log("Lookup tables populated successfully");
 
     // Populate test data
-    app.log("Populating test data...");
     populateTestData(db);
-    app.log("Test data populated successfully");
 
-    app.log("Database initialized successfully");
     return db;
   } catch (error) {
     app.error("Database initialization error:", error);

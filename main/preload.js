@@ -1,6 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { contextBridge, ipcRenderer } = require("electron");
-
-console.log("[Preload] Preload script is executing!");
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -14,159 +13,163 @@ contextBridge.exposeInMainWorld("electron", {
   database: {
     // Basic CRUD operations
     getAll: (table) => {
-      console.log("[Preload] getAll called with table:", table);
       return ipcRenderer.invoke("db-get-all", table);
     },
     getById: (table, id) => {
-      console.log("[Preload] getById called with table:", table, "id:", id);
       return ipcRenderer.invoke("db-get-by-id", table, id);
     },
     insert: (table, data) => {
-      console.log("[Preload] insert called with table:", table, "data:", data);
       return ipcRenderer.invoke("db-insert", table, data);
     },
     update: (table, id, data) => {
-      console.log(
-        "[Preload] update called with table:",
-        table,
-        "id:",
-        id,
-        "data:",
-        data
-      );
       return ipcRenderer.invoke("db-update", table, id, data);
     },
     delete: (table, id) => {
-      console.log("[Preload] delete called with table:", table, "id:", id);
       return ipcRenderer.invoke("db-delete", table, id);
     },
 
     // Advanced queries
     customQuery: (query, params) => {
-      console.log(
-        "[Preload] customQuery called with query:",
-        query,
-        "params:",
-        params
-      );
       return ipcRenderer.invoke("db-custom-query", query, params);
     },
 
     // Entity-specific operations for convenience
     // Centers
     getCenters: () => {
-      console.log("[Preload] getCenters called");
-      return ipcRenderer.invoke("db-get-all", "centers");
+      return ipcRenderer.invoke("db-get-all", "center");
     },
     addCenter: (data) => {
-      console.log("[Preload] addCenter called with data:", data);
-      return ipcRenderer.invoke("db-insert", "centers", data);
+      return ipcRenderer.invoke("db-insert", "center", data);
     },
 
     // Instructors
-    getInstructors: () => {
-      console.log("[Preload] getInstructors called");
-      return ipcRenderer.invoke("db-get-all", "instructors");
-    },
-    getActiveInstructors: () => {
-      console.log("[Preload] getActiveInstructors called");
+    getInstructors: (centerId) => {
       return ipcRenderer.invoke(
         "db-custom-query",
-        "SELECT * FROM instructors WHERE is_active = 1"
+        "SELECT * FROM instructor WHERE center_id = ?",
+        [centerId]
+      );
+    },
+    getActiveInstructors: (centerId) => {
+      return ipcRenderer.invoke(
+        "db-custom-query",
+        "SELECT * FROM instructor WHERE center_id = ? AND is_active = 1",
+        [centerId]
       );
     },
 
     // Students
-    getStudents: () => {
-      console.log("[Preload] getStudents called");
-      return ipcRenderer.invoke("db-get-all", "students");
-    },
-    getActiveStudents: () => {
-      console.log("[Preload] getActiveStudents called");
+    getStudents: (centerId) => {
       return ipcRenderer.invoke(
         "db-custom-query",
-        "SELECT * FROM students WHERE is_active = 1"
+        "SELECT * FROM student WHERE center_id = ?",
+        [centerId]
+      );
+    },
+    getActiveStudents: (centerId) => {
+      return ipcRenderer.invoke(
+        "db-custom-query",
+        "SELECT * FROM student WHERE center_id = ? AND is_active = 1",
+        [centerId]
+      );
+    },
+    getStudentsWithDetails: (centerId) => {
+      return ipcRenderer.invoke(
+        "db-custom-query",
+        `SELECT 
+          s.id,
+          s.center_id,
+          s.first_name,
+          s.last_name,
+          s.is_homework_help,
+          s.is_active,
+          gl.name as grade_level_name,
+          st.code as session_type_code,
+          st.length as session_type_length
+        FROM student s
+        LEFT JOIN grade_level gl ON s.grade_level_id = gl.id
+        LEFT JOIN session_type st ON s.default_session_type_id = st.id
+        WHERE s.center_id = ?
+        ORDER BY s.last_name, s.first_name`,
+        [centerId]
       );
     },
 
     // Schedule templates
-    getScheduleTemplates: () => {
-      console.log("[Preload] getScheduleTemplates called");
-      return ipcRenderer.invoke("db-get-all", "weekly_schedule_templates");
-    },
-    getDefaultTemplate: (centerId) => {
-      console.log(
-        "[Preload] getDefaultTemplate called with centerId:",
-        centerId
-      );
+    getScheduleTemplates: (centerId) => {
       return ipcRenderer.invoke(
         "db-custom-query",
-        "SELECT * FROM weekly_schedule_templates WHERE center_id = ? AND is_default = 1",
+        "SELECT * FROM weekly_schedule_template WHERE center_id = ?",
+        [centerId]
+      );
+    },
+    getDefaultTemplate: (centerId) => {
+      return ipcRenderer.invoke(
+        "db-custom-query",
+        "SELECT * FROM weekly_schedule_template WHERE center_id = ? AND is_default = 1",
         [centerId]
       );
     },
 
     // Schedules
     getSchedulesByCenterId: (centerId) => {
-      console.log(
-        "[Preload] getSchedulesByCenterId called with centerId:",
-        centerId
-      );
       return ipcRenderer.invoke(
         "db-custom-query",
         "SELECT * FROM schedule WHERE center_id = ?",
         [centerId]
       );
     },
-    getSchedulesByDate: (date) => {
-      console.log("[Preload] getSchedulesByDate called with date:", date);
+    getSchedulesByDate: (date, centerId) => {
       return ipcRenderer.invoke(
         "db-custom-query",
-        "SELECT * FROM schedules WHERE schedule_date = ?",
-        [date]
+        "SELECT * FROM schedule WHERE center_id = ? AND schedule_date = ?",
+        [centerId, date]
       );
     },
 
     // Schedule details
-    getScheduleWithDetails: (scheduleId) => {
-      console.log(
-        "[Preload] getScheduleWithDetails called with scheduleId:",
-        scheduleId
-      );
+    getScheduleWithDetails: (scheduleId, centerId) => {
       return ipcRenderer.invoke(
         "db-custom-query",
         `SELECT s.*, t.name as template_name, t.interval_length,
-         (SELECT COUNT(*) FROM cells WHERE schedule_id = s.id) as num_pods,
+         (SELECT COUNT(*) FROM cell WHERE schedule_id = s.id) as num_pods,
          u.first_name || ' ' || u.last_name as added_by_name
-         FROM schedules s
-         LEFT JOIN weekly_schedule_templates t ON s.template_id = t.id
-         LEFT JOIN users u ON s.added_by_user_id = u.id
-         WHERE s.id = ?`,
-        [scheduleId]
+         FROM schedule s
+         LEFT JOIN weekly_schedule_template t ON s.template_id = t.id
+         LEFT JOIN user u ON s.added_by_user_id = u.id
+         WHERE s.id = ? AND s.center_id = ?`,
+        [scheduleId, centerId]
       );
     },
 
     // Cells
-    getCellsForSchedule: (scheduleId) => {
-      console.log(
-        "[Preload] getCellsForSchedule called with scheduleId:",
-        scheduleId
-      );
+    getCellsForSchedule: (scheduleId, centerId) => {
       return ipcRenderer.invoke(
         "db-custom-query",
         `SELECT c.*, i.first_name as instructor_first_name, i.last_name as instructor_last_name,
          s.first_name as student_first_name, s.last_name as student_last_name
-         FROM cells c
-         LEFT JOIN instructors i ON c.instructor_id = i.id
-         LEFT JOIN students s ON c.student_id = s.id
-         WHERE c.schedule_id = ?`,
-        [scheduleId]
+         FROM cell c
+         LEFT JOIN instructor i ON c.instructor_id = i.id
+         LEFT JOIN student s ON c.student_id = s.id
+         WHERE c.schedule_id = ? AND c.center_id = ?`,
+        [scheduleId, centerId]
+      );
+    },
+
+    // Instructor with grade levels
+    getInstructorWithGradeLevels: (instructorId, centerId) => {
+      return ipcRenderer.invoke(
+        "db-custom-query",
+        `SELECT i.*, GROUP_CONCAT(igl.grade_level_id) as grade_levels
+         FROM instructor i
+         LEFT JOIN instructor_grade_level igl ON i.id = igl.instructor_id
+         WHERE i.id = ? AND i.center_id = ?
+         GROUP BY i.id`,
+        [instructorId, centerId]
       );
     },
   },
 });
-
-console.log("[Preload] Electron API exposed to renderer process");
 
 // Export a marker to show that the preload script was loaded
 module.exports = { preloadLoaded: true };

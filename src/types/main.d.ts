@@ -69,6 +69,7 @@
     lastName: string;       // varchar
     gradeLevelId: number;   // int → GradeLevel.id
     isHomeworkHelp: boolean;// boolean
+    defaultSessionTypeId: number; // int → SessionType.id
     isActive: boolean;      // boolean
   };
   
