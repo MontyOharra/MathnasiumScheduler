@@ -7,6 +7,7 @@ import {
   Schedule,
   Cell,
   GradeLevel,
+  WeeklySchedule,
 } from "../types/main";
 
 // Define TypeScript interfaces for database results
@@ -255,7 +256,13 @@ export class DatabaseService {
     );
   }
 
-  async getStudentsWithDetails(centerId: number): Promise<
+  async getStudentsWithDetails(
+    centerId: number,
+    sort?: {
+      field: "firstName" | "lastName" | "gradeLevel" | "sessionType" | null;
+      direction: "asc" | "desc";
+    }
+  ): Promise<
     (Student & {
       gradeLevelName: string;
       sessionTypeCode: string;
@@ -263,19 +270,71 @@ export class DatabaseService {
     })[]
   > {
     this.checkElectron();
-    const results = await window.electron.database.getStudentsWithDetails(
-      centerId
-    );
+    try {
+      console.log("Sorting with:", sort);
+      // @ts-ignore - The preload script accepts two parameters
+      const results = await window.electron.database.getStudentsWithDetails(
+        centerId,
+        sort
+      );
+      this.handleError(results);
+      return results.map((student: Record<string, unknown>) =>
+        snakeToCamel<
+          Student & {
+            gradeLevelName: string;
+            sessionTypeCode: string;
+            sessionTypeLength: number;
+          }
+        >(student)
+      );
+    } catch (error) {
+      console.error("Error in getStudentsWithDetails:", error);
+      return [];
+    }
+  }
+
+  async getGradeLevels(): Promise<{ id: number; name: string }[]> {
+    this.checkElectron();
+    const results = await window.electron.database.getAll("grade_level");
     this.handleError(results);
-    return results.map((student: Record<string, unknown>) =>
-      snakeToCamel<
-        Student & {
-          gradeLevelName: string;
-          sessionTypeCode: string;
-          sessionTypeLength: number;
-        }
-      >(student)
-    );
+    return results.map((gradeLevel: Record<string, unknown>) => ({
+      id: gradeLevel.id as number,
+      name: gradeLevel.name as string,
+    }));
+  }
+
+  async getSessionTypes(): Promise<
+    { id: number; code: string; length: number }[]
+  > {
+    this.checkElectron();
+    const results = await window.electron.database.getAll("session_type");
+    this.handleError(results);
+    return results.map((sessionType: Record<string, unknown>) => ({
+      id: sessionType.id as number,
+      code: sessionType.code as string,
+      length: sessionType.length as number,
+    }));
+  }
+
+  async updateStudent(id: number, student: Partial<Student>): Promise<boolean> {
+    this.checkElectron();
+    const dbStudent = camelToSnake(student);
+    const result = await window.electron.database.updateStudent(id, dbStudent);
+    this.handleError(result);
+    return result.changes > 0;
+  }
+
+  async insertStudent(student: Omit<Student, "id">): Promise<number> {
+    this.checkElectron();
+    const dbStudent = camelToSnake({
+      ...student,
+      default_session_type_id: student.defaultSessionTypeId,
+      is_homework_help: student.isHomeworkHelp ? 1 : 0,
+      is_active: student.isActive ? 1 : 0,
+    });
+    const result = await window.electron.database.insert("student", dbStudent);
+    this.handleError(result);
+    return result.id as number;
   }
 
   // Schedules
@@ -289,6 +348,27 @@ export class DatabaseService {
     this.handleError(results);
     return results.map((template: Record<string, unknown>) =>
       snakeToCamel<WeeklyScheduleTemplate>(template)
+    );
+  }
+
+  async getWeeklySchedulesByCenterId(centerId: number): Promise<
+    (WeeklySchedule & {
+      addedByName: string;
+      templateName: string;
+    })[]
+  > {
+    this.checkElectron();
+    const results = await window.electron.database.getWeeklySchedulesByCenterId(
+      centerId
+    );
+    this.handleError(results);
+    return results.map((schedule: Record<string, unknown>) =>
+      snakeToCamel<
+        WeeklySchedule & {
+          addedByName: string;
+          templateName: string;
+        }
+      >(schedule)
     );
   }
 

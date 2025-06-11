@@ -116,20 +116,28 @@ const createTables = (db) => {
   `);
 
   db.exec(`
-    CREATE TABLE IF NOT EXISTS schedule (
-      id TEXT PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS weekly_schedule (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       center_id INTEGER NOT NULL,
       template_id TEXT NOT NULL,
       added_by_user_id INTEGER NOT NULL,
       date_created TEXT NOT NULL,
       date_last_modified TEXT NOT NULL,
+      week_start_date TEXT NOT NULL
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS schedule (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      weekly_schedule_id INTEGER NOT NULL,
       schedule_date TEXT NOT NULL
     )
   `);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS schedule_session (
-      schedule_id TEXT NOT NULL,
+      schedule_id INTEGER NOT NULL,
       session_id INTEGER NOT NULL,
       PRIMARY KEY (schedule_id, session_id)
     )
@@ -149,7 +157,7 @@ const createTables = (db) => {
     CREATE TABLE IF NOT EXISTS cell (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       center_id INTEGER NOT NULL,
-      schedule_id TEXT NOT NULL,
+      schedule_id INTEGER NOT NULL,
       instructor_id INTEGER NOT NULL,
       student_id INTEGER NOT NULL,
       time_start TEXT NOT NULL,
@@ -231,6 +239,7 @@ const populateLookupTables = (db) => {
       { name: "Real Analysis" },
       { name: "Complex Analysis" },
       { name: "Topology" },
+      { name: "SAT Prep" },
     ];
 
     const insertGradeLevel = db.prepare(
@@ -701,88 +710,127 @@ const populateTestData = (db) => {
     );
   });
 
-  // 11. Insert schedules
-  const schedules = [
+  // 11. Insert weekly schedules
+  const weeklySchedules = [
     {
-      id: "2025-03-01",
+      id: 1,
       center_id: center.id,
       template_id: "spring-schedule",
       added_by_user_id: adminUser.id,
       date_created: "2025-02-15T10:00:00.000Z",
       date_last_modified: "2025-02-15T10:00:00.000Z",
+      week_start_date: "2025-03-01",
+    },
+    {
+      id: 2,
+      center_id: center.id,
+      template_id: "spring-schedule",
+      added_by_user_id: adminUser.id,
+      date_created: "2025-02-15T10:00:00.000Z",
+      date_last_modified: "2025-02-15T10:00:00.000Z",
+      week_start_date: "2025-03-08",
+    },
+  ];
+  const insertWeeklySchedule = db.prepare(
+    "INSERT INTO weekly_schedule (id, center_id, template_id, added_by_user_id, date_created, date_last_modified, week_start_date) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  );
+  weeklySchedules.forEach((weeklySchedule) => {
+    insertWeeklySchedule.run(
+      weeklySchedule.id,
+      weeklySchedule.center_id,
+      weeklySchedule.template_id,
+      weeklySchedule.added_by_user_id,
+      weeklySchedule.date_created,
+      weeklySchedule.date_last_modified,
+      weeklySchedule.week_start_date
+    );
+  });
+
+  // 12. Insert daily schedules
+  const schedules = [
+    {
+      id: 1,
+      weekly_schedule_id: 1,
       schedule_date: "2025-03-01",
     },
     {
-      id: "2025-03-02",
-      center_id: center.id,
-      template_id: "spring-schedule",
-      added_by_user_id: adminUser.id,
-      date_created: "2025-02-15T10:00:00.000Z",
-      date_last_modified: "2025-02-15T10:00:00.000Z",
+      id: 2,
+      weekly_schedule_id: 1,
       schedule_date: "2025-03-02",
     },
     {
-      id: "2025-03-03",
-      center_id: center.id,
-      template_id: "spring-schedule",
-      added_by_user_id: adminUser.id,
-      date_created: "2025-02-15T10:00:00.000Z",
-      date_last_modified: "2025-02-15T10:00:00.000Z",
+      id: 3,
+      weekly_schedule_id: 1,
       schedule_date: "2025-03-03",
     },
     {
-      id: "2025-03-04",
-      center_id: center.id,
-      template_id: "spring-schedule",
-      added_by_user_id: adminUser.id,
-      date_created: "2025-02-15T10:00:00.000Z",
-      date_last_modified: "2025-02-15T10:00:00.000Z",
+      id: 4,
+      weekly_schedule_id: 1,
       schedule_date: "2025-03-04",
     },
     {
-      id: "2025-03-05",
-      center_id: center.id,
-      template_id: "spring-schedule",
-      added_by_user_id: adminUser.id,
-      date_created: "2025-02-15T10:00:00.000Z",
-      date_last_modified: "2025-02-15T10:00:00.000Z",
+      id: 5,
+      weekly_schedule_id: 1,
       schedule_date: "2025-03-05",
     },
     {
-      id: "2025-03-06",
-      center_id: center.id,
-      template_id: "spring-schedule",
-      added_by_user_id: adminUser.id,
-      date_created: "2025-02-15T10:00:00.000Z",
-      date_last_modified: "2025-02-15T10:00:00.000Z",
+      id: 6,
+      weekly_schedule_id: 1,
       schedule_date: "2025-03-06",
     },
     {
-      id: "2025-03-07",
-      center_id: center.id,
-      template_id: "spring-schedule",
-      added_by_user_id: adminUser.id,
-      date_created: "2025-02-15T10:00:00.000Z",
-      date_last_modified: "2025-02-15T10:00:00.000Z",
+      id: 7,
+      weekly_schedule_id: 1,
       schedule_date: "2025-03-07",
+    },
+    {
+      id: 8,
+      weekly_schedule_id: 2,
+      schedule_date: "2025-03-08",
+    },
+    {
+      id: 9,
+      weekly_schedule_id: 2,
+      schedule_date: "2025-03-09",
+    },
+    {
+      id: 10,
+      weekly_schedule_id: 2,
+      schedule_date: "2025-03-10",
+    },
+    {
+      id: 11,
+      weekly_schedule_id: 2,
+      schedule_date: "2025-03-11",
+    },
+    {
+      id: 12,
+      weekly_schedule_id: 2,
+      schedule_date: "2025-03-12",
+    },
+    {
+      id: 13,
+      weekly_schedule_id: 2,
+      schedule_date: "2025-03-13",
+    },
+    {
+      id: 14,
+      weekly_schedule_id: 2,
+      schedule_date: "2025-03-14",
     },
   ];
   const insertSchedule = db.prepare(
-    "INSERT INTO schedule (id, center_id, template_id, added_by_user_id, date_created, date_last_modified, schedule_date) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO schedule (id, weekly_schedule_id, schedule_date) VALUES (?, ?, ?)"
   );
   schedules.forEach((schedule) => {
     insertSchedule.run(
       schedule.id,
-      schedule.center_id,
-      schedule.template_id,
-      schedule.added_by_user_id,
-      schedule.date_created,
-      schedule.date_last_modified,
+      schedule.weekly_schedule_id,
       schedule.schedule_date
     );
   });
 
-  // 12. Insert sessions
+  // 13. Insert sessions
   const sessions = [
     {
       id: 1,
@@ -924,9 +972,9 @@ const populateTestData = (db) => {
     );
   });
 
-  // 13. Insert schedule sessions
+  // 14. Insert schedule sessions
   const scheduleSessions = sessions.map((session) => ({
-    schedule_id: "2025-03-01",
+    schedule_id: 1, // Updated to use the new schedule ID
     session_id: session.id,
   }));
   const insertScheduleSession = db.prepare(

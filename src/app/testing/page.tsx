@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Schedule from "@/components/Schedule";
+import Schedule from "@/app/dashboard/schedules/(components)/Schedule";
 import {
   Student,
   Instructor,

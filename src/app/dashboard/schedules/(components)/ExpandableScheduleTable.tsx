@@ -1,21 +1,23 @@
 "use client";
 
-import { Schedule } from "@/types/main";
+import { WeeklySchedule } from "@/types/main";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
-import SchedulesTable from "./SchedulesTable";
+import WeeklyScheduleTable from "./WeeklyScheduleTable";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ExpandableScheduleTableProps {
   title: string;
-  schedules: Schedule[];
-  onEdit: (schedule: Schedule) => void;
-  onPrint: (schedule: Schedule) => void;
-  onDelete: (schedule: Schedule) => void;
+  weeklySchedules: WeeklySchedule[];
+  onEdit: (weeklySchedule: WeeklySchedule) => void;
+  onPrint: (weeklySchedule: WeeklySchedule) => void;
+  onDelete: (weeklySchedule: WeeklySchedule) => void;
 }
 
 export default function ExpandableScheduleTable({
   title,
-  schedules,
+  weeklySchedules,
   onEdit,
   onPrint,
   onDelete,
@@ -24,24 +26,27 @@ export default function ExpandableScheduleTable({
 
   return (
     <div className="mb-6">
-      <button
+      <Button
+        variant="ghost"
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between p-4 bg-white rounded-t-lg border border-gray-200 hover:bg-gray-50 transition-colors"
       >
         <h2 className="text-lg font-semibold text-red-500">{title}</h2>
         <ChevronDownIcon
-          className={`h-5 w-5 text-red-500 transition-transform duration-200 ${
+          className={cn(
+            "h-5 w-5 text-red-500 transition-transform duration-200",
             isExpanded ? "rotate-0" : "-rotate-90"
-          }`}
+          )}
         />
-      </button>
+      </Button>
       <div
-        className={`overflow-hidden transition-all duration-200 ease-in-out ${
+        className={cn(
+          "overflow-hidden transition-all duration-200 ease-in-out",
           isExpanded ? "max-h-[2000px]" : "max-h-0"
-        }`}
+        )}
       >
-        <SchedulesTable
-          schedules={schedules}
+        <WeeklyScheduleTable
+          weeklySchedules={weeklySchedules}
           onEdit={onEdit}
           onPrint={onPrint}
           onDelete={onDelete}

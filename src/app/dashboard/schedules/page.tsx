@@ -1,8 +1,8 @@
 "use client";
 
-import NewScheduleButton from "@/components/NewScheduleButton";
-import ExpandableScheduleTable from "@/components/ExpandableScheduleTable";
-import { Schedule } from "@/types/main";
+import NewScheduleButton from "@/app/dashboard/schedules/(components)/NewScheduleButton";
+import ExpandableScheduleTable from "@/app/dashboard/schedules/(components)/ExpandableScheduleTable";
+import { Schedule, WeeklySchedule } from "@/types/main";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dbService from "@/lib/db-service";
@@ -12,15 +12,15 @@ export default function SchedulesPage() {
   const router = useRouter();
   const { isElectron } = useElectron();
   const [isLoaded, setIsLoaded] = useState(false);
-  const [schedulesData, setSchedulesData] = useState<Schedule[]>([]);
+  const [weeklySchedulesData, setWeeklySchedulesData] = useState<WeeklySchedule[]>([]);
 
   const fetchSchedules = async () => {
     try {
-      const schedules = await dbService.getSchedulesByCenterId(1);
-      setSchedulesData(schedules || []);
+      const weeklySchedules = await dbService.getWeeklySchedulesByCenterId(1);
+      setWeeklySchedulesData(weeklySchedules || []);
     } catch (error) {
       console.error("Error fetching schedules:", error);
-      setSchedulesData([]);
+      setWeeklySchedulesData([]);
     } finally {
       setIsLoaded(true);
     }
@@ -30,28 +30,28 @@ export default function SchedulesPage() {
     fetchSchedules();
   }, []);
 
-  const handleEdit = (schedule: Schedule) => {
-    console.log("Edit schedule:", schedule);
-    router.push(`/dashboard/schedules/${schedule.id}/edit`);
+  const handleEdit = (weeklySchedule: WeeklySchedule) => {
+    console.log("Edit schedule:", weeklySchedule);
+    router.push(`/dashboard/schedules/${weeklySchedule.id}/edit`);
   };
 
-  const handlePrint = (schedule: Schedule) => {
-    console.log("Print schedule:", schedule);
+  const handlePrint = (weeklySchedule: WeeklySchedule) => {
+    console.log("Print schedule:", weeklySchedule);
     // TODO: Implement print functionality
   };
 
-  const handleDelete = (schedule: Schedule) => {
-    console.log("Delete schedule:", schedule);
+  const handleDelete = (weeklySchedule: WeeklySchedule) => {
+    console.log("Delete schedule:", weeklySchedule);
     // TODO: Implement delete functionality
   };
 
   // Filter schedules by date
   const today = new Date();
-  const pastSchedules = schedulesData.filter(
-    (schedule: Schedule) => new Date(schedule.scheduleDate) < today
+  const pastSchedules = weeklySchedulesData.filter(
+    (weeklySchedule: WeeklySchedule) => new Date(weeklySchedule.weekStartDate) < today
   );
-  const upcomingSchedules = schedulesData.filter(
-    (schedule: Schedule) => new Date(schedule.scheduleDate) >= today
+  const upcomingSchedules = weeklySchedulesData.filter(
+    (weeklySchedule: WeeklySchedule) => new Date(weeklySchedule.weekStartDate) >= today
   );
 
   if (!isLoaded) {
@@ -83,14 +83,14 @@ export default function SchedulesPage() {
       <div className="space-y-6">
         <ExpandableScheduleTable
           title="Upcoming Schedules"
-          schedules={upcomingSchedules}
+          weeklySchedules={upcomingSchedules}
           onEdit={handleEdit}
           onPrint={handlePrint}
           onDelete={handleDelete}
         />
         <ExpandableScheduleTable
           title="Past Schedules"
-          schedules={pastSchedules}
+          weeklySchedules={pastSchedules}
           onEdit={handleEdit}
           onPrint={handlePrint}
           onDelete={handleDelete}

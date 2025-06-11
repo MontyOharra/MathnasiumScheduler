@@ -73,26 +73,54 @@ contextBridge.exposeInMainWorld("electron", {
         [centerId]
       );
     },
-    getStudentsWithDetails: (centerId) => {
-      return ipcRenderer.invoke(
-        "db-custom-query",
-        `SELECT 
-          s.id,
-          s.center_id,
-          s.first_name,
-          s.last_name,
-          s.is_homework_help,
-          s.is_active,
-          gl.name as grade_level_name,
-          st.code as session_type_code,
-          st.length as session_type_length
-        FROM student s
-        LEFT JOIN grade_level gl ON s.grade_level_id = gl.id
-        LEFT JOIN session_type st ON s.default_session_type_id = st.id
-        WHERE s.center_id = ?
-        ORDER BY s.last_name, s.first_name`,
-        [centerId]
-      );
+    getStudentsWithDetails: async (centerId, sort) => {
+      try {
+        console.log("Preload received sort:", sort);
+        let query = `
+          SELECT 
+            s.*,
+            gl.name as grade_level_name,
+            st.code as session_type_code,
+            st.length as session_type_length
+          FROM student s
+          LEFT JOIN grade_level gl ON s.grade_level_id = gl.id
+          LEFT JOIN session_type st ON s.default_session_type_id = st.id
+          WHERE s.center_id = ?
+        `;
+
+        console;
+        // Add sorting if specified
+        if (sort?.field) {
+          const sortField = {
+            firstName: "s.first_name",
+            lastName: "s.last_name",
+            gradeLevel: "gl.name",
+            sessionType: "st.code",
+          }[sort.field];
+
+          if (sortField) {
+            const direction = sort.direction.toUpperCase();
+            console.log(`Sorting by ${sortField} ${direction}`);
+            query += ` ORDER BY ${sortField} ${direction}`;
+          }
+        } else {
+          // Default sort by last name, first name if no sort specified
+          query += " ORDER BY s.last_name ASC, s.first_name ASC";
+        }
+
+        console.log("Final query:", query);
+        const results = await ipcRenderer.invoke("db-custom-query", query, [
+          centerId,
+        ]);
+        console.log("Query results:", results);
+        return results;
+      } catch (error) {
+        console.error("Error in getStudentsWithDetails:", error);
+        return { error: error.message };
+      }
+    },
+    updateStudent: (studentId, data) => {
+      return ipcRenderer.invoke("db-update", "student", studentId, data);
     },
 
     // Schedule templates
@@ -124,6 +152,20 @@ contextBridge.exposeInMainWorld("electron", {
         "db-custom-query",
         "SELECT * FROM schedule WHERE center_id = ? AND schedule_date = ?",
         [centerId, date]
+      );
+    },
+    getWeeklySchedulesByCenterId: (centerId) => {
+      return ipcRenderer.invoke(
+        "db-custom-query",
+        `SELECT ws.*, 
+         u.first_name || ' ' || u.last_name as added_by_name,
+         t.name as template_name
+         FROM weekly_schedule ws
+         LEFT JOIN user u ON ws.added_by_user_id = u.id
+         LEFT JOIN weekly_schedule_template t ON ws.template_id = t.id
+         WHERE ws.center_id = ?
+         ORDER BY ws.week_start_date DESC`,
+        [centerId]
       );
     },
 

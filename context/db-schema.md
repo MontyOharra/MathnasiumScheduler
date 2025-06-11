@@ -109,7 +109,7 @@ This document serves as a reference for the database schema used in the Mathnasi
 | `end_time`    | TEXT    | End time for this weekday                  |
 | `num_columns` | INTEGER | Number of columns for this weekday         |
 
-### Table: `schedule`
+### Table: `weekly_schedule`
 
 | Column               | Type    | Description                                |
 | -------------------- | ------- | ------------------------------------------ |
@@ -119,7 +119,15 @@ This document serves as a reference for the database schema used in the Mathnasi
 | `added_by_user_id`   | INTEGER | Foreign key to user.id                     |
 | `date_created`       | TEXT    | Creation datetime                          |
 | `date_last_modified` | TEXT    | Last modification datetime                 |
-| `schedule_date`      | TEXT    | Date of the schedule                       |
+| `week_start_date`    | TEXT    | Date of the schedule                       |
+
+### Table: `schedule`
+
+| Column               | Type     | Description                    |
+| -------------------- | -------- | ------------------------------ |
+| `id`                 | INTEGER  | Primary key, auto-increment    |
+| `weekly_schedule_id` | INTEGER  | Foreign key to center.id       |
+| `schedule_date`      | DATETIME | Foreign key to student.id      |
 
 ### Table: `schedule_session`
 

@@ -34,7 +34,14 @@ interface ElectronAPI {
 
     getStudents: (centerId: number) => Promise<DbQueryResult>;
     getActiveStudents: (centerId: number) => Promise<DbQueryResult>;
-    getStudentsWithDetails: (centerId: number) => Promise<DbQueryResult>;
+    getStudentsWithDetails: (
+      centerId: number,
+      sort?: Sort
+    ) => Promise<DbQueryResult>;
+    updateStudent: (
+      studentId: number,
+      data: Record<string, unknown>
+    ) => Promise<{ changes: number }>;
 
     getScheduleTemplates: (centerId: number) => Promise<DbQueryResult>;
     getDefaultTemplate: (centerId: number) => Promise<DbQueryResult>;
@@ -44,6 +51,7 @@ interface ElectronAPI {
       date: string,
       centerId: number
     ) => Promise<DbQueryResult>;
+    getWeeklySchedulesByCenterId: (centerId: number) => Promise<DbQueryResult>;
 
     getInstructorWithGradeLevels: (
       instructorId: number,
