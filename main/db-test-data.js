@@ -110,6 +110,245 @@ const instructors = [
     cell_color: "#FF00FF",
     is_active: 1,
   },
+  {
+    id: 6,
+    center_id: center.id,
+    first_name: "Diana",
+    last_name: "Rodriguez",
+    cell_color: "#00FFFF",
+    is_active: 1,
+  },
+  {
+    id: 7,
+    center_id: center.id,
+    first_name: "Ethan",
+    last_name: "Lee",
+    cell_color: "#FFA500",
+    is_active: 1,
+  },
+  {
+    id: 8,
+    center_id: center.id,
+    first_name: "Fiona",
+    last_name: "Garcia",
+    cell_color: "#800080",
+    is_active: 1,
+  },
+  {
+    id: 9,
+    center_id: center.id,
+    first_name: "Gabriel",
+    last_name: "Martinez",
+    cell_color: "#008000",
+    is_active: 1,
+  },
+  {
+    id: 10,
+    center_id: center.id,
+    first_name: "Hannah",
+    last_name: "Thompson",
+    cell_color: "#FF1493",
+    is_active: 1,
+  },
+  {
+    id: 11,
+    center_id: center.id,
+    first_name: "Isaac",
+    last_name: "Davis",
+    cell_color: "#4B0082",
+    is_active: 1,
+  },
+  {
+    id: 12,
+    center_id: center.id,
+    first_name: "Jasmine",
+    last_name: "Kim",
+    cell_color: "#FF6347",
+    is_active: 1,
+  },
+];
+
+// Instructor Grade Level assignments
+// Grade level IDs: K=1, 1=2, 2=3, 3=4, 4=5, 5=6, 6=7, 7=8, 8=9, Pre-Algebra=10,
+// Algebra 1=11, Geometry=12, Algebra 2=13, Pre-Calculus=14, AP Pre-Calculus=15,
+// AP Calculus AB=16, AP Calculus BC=17, Statistics=18, AP Statistics=19,
+// Discrete Mathematics=20, Linear Algebra=21, Differential Equations=22, SAT Prep=23
+const instructorGradeLevels = [
+  // John Doe - Basic instructor (K-6 only)
+  { instructor_id: 1, grade_level_id: 1 }, // K
+  { instructor_id: 1, grade_level_id: 2 }, // 1
+  { instructor_id: 1, grade_level_id: 3 }, // 2
+  { instructor_id: 1, grade_level_id: 4 }, // 3
+  { instructor_id: 1, grade_level_id: 5 }, // 4
+  { instructor_id: 1, grade_level_id: 6 }, // 5
+  { instructor_id: 1, grade_level_id: 7 }, // 6
+
+  // Jane Smith - Elementary + Middle school
+  { instructor_id: 2, grade_level_id: 1 }, // K
+  { instructor_id: 2, grade_level_id: 2 }, // 1
+  { instructor_id: 2, grade_level_id: 3 }, // 2
+  { instructor_id: 2, grade_level_id: 4 }, // 3
+  { instructor_id: 2, grade_level_id: 5 }, // 4
+  { instructor_id: 2, grade_level_id: 6 }, // 5
+  { instructor_id: 2, grade_level_id: 7 }, // 6
+  { instructor_id: 2, grade_level_id: 8 }, // 7
+  { instructor_id: 2, grade_level_id: 9 }, // 8
+
+  // Bob Johnson - Up to Algebra 1
+  { instructor_id: 3, grade_level_id: 1 }, // K
+  { instructor_id: 3, grade_level_id: 2 }, // 1
+  { instructor_id: 3, grade_level_id: 3 }, // 2
+  { instructor_id: 3, grade_level_id: 4 }, // 3
+  { instructor_id: 3, grade_level_id: 5 }, // 4
+  { instructor_id: 3, grade_level_id: 6 }, // 5
+  { instructor_id: 3, grade_level_id: 7 }, // 6
+  { instructor_id: 3, grade_level_id: 8 }, // 7
+  { instructor_id: 3, grade_level_id: 9 }, // 8
+  { instructor_id: 3, grade_level_id: 11 }, // Algebra 1
+
+  // Alice Brown - Up to Geometry (following progression)
+  { instructor_id: 4, grade_level_id: 1 }, // K
+  { instructor_id: 4, grade_level_id: 2 }, // 1
+  { instructor_id: 4, grade_level_id: 3 }, // 2
+  { instructor_id: 4, grade_level_id: 4 }, // 3
+  { instructor_id: 4, grade_level_id: 5 }, // 4
+  { instructor_id: 4, grade_level_id: 6 }, // 5
+  { instructor_id: 4, grade_level_id: 7 }, // 6
+  { instructor_id: 4, grade_level_id: 8 }, // 7
+  { instructor_id: 4, grade_level_id: 9 }, // 8
+  { instructor_id: 4, grade_level_id: 11 }, // Algebra 1
+  { instructor_id: 4, grade_level_id: 12 }, // Geometry
+
+  // Charlie Wilson - Up to Algebra 2 (following progression)
+  { instructor_id: 5, grade_level_id: 1 }, // K
+  { instructor_id: 5, grade_level_id: 2 }, // 1
+  { instructor_id: 5, grade_level_id: 3 }, // 2
+  { instructor_id: 5, grade_level_id: 4 }, // 3
+  { instructor_id: 5, grade_level_id: 5 }, // 4
+  { instructor_id: 5, grade_level_id: 6 }, // 5
+  { instructor_id: 5, grade_level_id: 7 }, // 6
+  { instructor_id: 5, grade_level_id: 8 }, // 7
+  { instructor_id: 5, grade_level_id: 9 }, // 8
+  { instructor_id: 5, grade_level_id: 11 }, // Algebra 1
+  { instructor_id: 5, grade_level_id: 12 }, // Geometry
+  { instructor_id: 5, grade_level_id: 13 }, // Algebra 2
+
+  // Diana Rodriguez - Up to Pre-Calculus + Statistics (branching specialty)
+  { instructor_id: 6, grade_level_id: 1 }, // K
+  { instructor_id: 6, grade_level_id: 2 }, // 1
+  { instructor_id: 6, grade_level_id: 3 }, // 2
+  { instructor_id: 6, grade_level_id: 4 }, // 3
+  { instructor_id: 6, grade_level_id: 5 }, // 4
+  { instructor_id: 6, grade_level_id: 6 }, // 5
+  { instructor_id: 6, grade_level_id: 7 }, // 6
+  { instructor_id: 6, grade_level_id: 8 }, // 7
+  { instructor_id: 6, grade_level_id: 9 }, // 8
+  { instructor_id: 6, grade_level_id: 11 }, // Algebra 1
+  { instructor_id: 6, grade_level_id: 12 }, // Geometry
+  { instructor_id: 6, grade_level_id: 13 }, // Algebra 2
+  { instructor_id: 6, grade_level_id: 14 }, // Pre-Calculus
+  { instructor_id: 6, grade_level_id: 18 }, // Statistics
+  { instructor_id: 6, grade_level_id: 19 }, // AP Statistics
+
+  // Ethan Lee - Calculus track specialist
+  { instructor_id: 7, grade_level_id: 1 }, // K
+  { instructor_id: 7, grade_level_id: 2 }, // 1
+  { instructor_id: 7, grade_level_id: 3 }, // 2
+  { instructor_id: 7, grade_level_id: 4 }, // 3
+  { instructor_id: 7, grade_level_id: 5 }, // 4
+  { instructor_id: 7, grade_level_id: 6 }, // 5
+  { instructor_id: 7, grade_level_id: 7 }, // 6
+  { instructor_id: 7, grade_level_id: 8 }, // 7
+  { instructor_id: 7, grade_level_id: 9 }, // 8
+  { instructor_id: 7, grade_level_id: 11 }, // Algebra 1
+  { instructor_id: 7, grade_level_id: 12 }, // Geometry
+  { instructor_id: 7, grade_level_id: 13 }, // Algebra 2
+  { instructor_id: 7, grade_level_id: 14 }, // Pre-Calculus
+  { instructor_id: 7, grade_level_id: 15 }, // AP Pre-Calculus
+  { instructor_id: 7, grade_level_id: 16 }, // AP Calculus AB
+  { instructor_id: 7, grade_level_id: 17 }, // AP Calculus BC
+
+  // Fiona Garcia - Advanced math specialist (college level)
+  { instructor_id: 8, grade_level_id: 1 }, // K
+  { instructor_id: 8, grade_level_id: 2 }, // 1
+  { instructor_id: 8, grade_level_id: 3 }, // 2
+  { instructor_id: 8, grade_level_id: 4 }, // 3
+  { instructor_id: 8, grade_level_id: 5 }, // 4
+  { instructor_id: 8, grade_level_id: 6 }, // 5
+  { instructor_id: 8, grade_level_id: 7 }, // 6
+  { instructor_id: 8, grade_level_id: 8 }, // 7
+  { instructor_id: 8, grade_level_id: 9 }, // 8
+  { instructor_id: 8, grade_level_id: 11 }, // Algebra 1
+  { instructor_id: 8, grade_level_id: 12 }, // Geometry
+  { instructor_id: 8, grade_level_id: 13 }, // Algebra 2
+  { instructor_id: 8, grade_level_id: 14 }, // Pre-Calculus
+  { instructor_id: 8, grade_level_id: 15 }, // AP Pre-Calculus
+  { instructor_id: 8, grade_level_id: 16 }, // AP Calculus AB
+  { instructor_id: 8, grade_level_id: 17 }, // AP Calculus BC
+  { instructor_id: 8, grade_level_id: 20 }, // Discrete Mathematics
+  { instructor_id: 8, grade_level_id: 21 }, // Linear Algebra
+  { instructor_id: 8, grade_level_id: 22 }, // Differential Equations
+
+  // Gabriel Martinez - Statistics specialist (doesn't know calculus but knows stats)
+  { instructor_id: 9, grade_level_id: 1 }, // K
+  { instructor_id: 9, grade_level_id: 2 }, // 1
+  { instructor_id: 9, grade_level_id: 3 }, // 2
+  { instructor_id: 9, grade_level_id: 4 }, // 3
+  { instructor_id: 9, grade_level_id: 5 }, // 4
+  { instructor_id: 9, grade_level_id: 6 }, // 5
+  { instructor_id: 9, grade_level_id: 7 }, // 6
+  { instructor_id: 9, grade_level_id: 8 }, // 7
+  { instructor_id: 9, grade_level_id: 9 }, // 8
+  { instructor_id: 9, grade_level_id: 11 }, // Algebra 1
+  { instructor_id: 9, grade_level_id: 12 }, // Geometry
+  { instructor_id: 9, grade_level_id: 13 }, // Algebra 2
+  { instructor_id: 9, grade_level_id: 18 }, // Statistics
+  { instructor_id: 9, grade_level_id: 19 }, // AP Statistics
+  { instructor_id: 9, grade_level_id: 23 }, // SAT Prep
+
+  // Hannah Thompson - SAT Prep specialist with solid foundation
+  { instructor_id: 10, grade_level_id: 1 }, // K
+  { instructor_id: 10, grade_level_id: 2 }, // 1
+  { instructor_id: 10, grade_level_id: 3 }, // 2
+  { instructor_id: 10, grade_level_id: 4 }, // 3
+  { instructor_id: 10, grade_level_id: 5 }, // 4
+  { instructor_id: 10, grade_level_id: 6 }, // 5
+  { instructor_id: 10, grade_level_id: 7 }, // 6
+  { instructor_id: 10, grade_level_id: 8 }, // 7
+  { instructor_id: 10, grade_level_id: 9 }, // 8
+  { instructor_id: 10, grade_level_id: 11 }, // Algebra 1
+  { instructor_id: 10, grade_level_id: 12 }, // Geometry
+  { instructor_id: 10, grade_level_id: 13 }, // Algebra 2
+  { instructor_id: 10, grade_level_id: 14 }, // Pre-Calculus
+  { instructor_id: 10, grade_level_id: 23 }, // SAT Prep
+
+  // Isaac Davis - Theory specialist (advanced pure math)
+  { instructor_id: 11, grade_level_id: 1 }, // K
+  { instructor_id: 11, grade_level_id: 2 }, // 1
+  { instructor_id: 11, grade_level_id: 3 }, // 2
+  { instructor_id: 11, grade_level_id: 4 }, // 3
+  { instructor_id: 11, grade_level_id: 5 }, // 4
+  { instructor_id: 11, grade_level_id: 6 }, // 5
+  { instructor_id: 11, grade_level_id: 7 }, // 6
+  { instructor_id: 11, grade_level_id: 8 }, // 7
+  { instructor_id: 11, grade_level_id: 9 }, // 8
+  { instructor_id: 11, grade_level_id: 11 }, // Algebra 1
+  { instructor_id: 11, grade_level_id: 12 }, // Geometry
+  { instructor_id: 11, grade_level_id: 13 }, // Algebra 2
+  { instructor_id: 11, grade_level_id: 14 }, // Pre-Calculus
+  { instructor_id: 11, grade_level_id: 21 }, // Linear Algebra
+  { instructor_id: 11, grade_level_id: 22 }, // Differential Equations
+
+  // Jasmine Kim - Middle school specialist
+  { instructor_id: 12, grade_level_id: 1 }, // K
+  { instructor_id: 12, grade_level_id: 2 }, // 1
+  { instructor_id: 12, grade_level_id: 3 }, // 2
+  { instructor_id: 12, grade_level_id: 4 }, // 3
+  { instructor_id: 12, grade_level_id: 5 }, // 4
+  { instructor_id: 12, grade_level_id: 6 }, // 5
+  { instructor_id: 12, grade_level_id: 7 }, // 6
+  { instructor_id: 12, grade_level_id: 8 }, // 7
+  { instructor_id: 12, grade_level_id: 9 }, // 8
 ];
 
 const students = [
@@ -480,6 +719,7 @@ module.exports = {
   templates,
   templateWeekdays,
   instructors,
+  instructorGradeLevels,
   students,
   weeklySchedules,
   schedules,

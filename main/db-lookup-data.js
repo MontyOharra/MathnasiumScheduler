@@ -9,45 +9,37 @@ const weekdays = [
 ];
 
 const gradeLevels = [
-  // Elementary school (K-5)
-  { name: "K" },
-  { name: "1" },
-  { name: "2" },
-  { name: "3" },
-  { name: "4" },
-  { name: "5" },
+  // Elementary school (K-5) - Basic levels
+  { name: "K", alias: "K", is_basic: 1 },
+  { name: "1", alias: "1", is_basic: 1 },
+  { name: "2", alias: "2", is_basic: 1 },
+  { name: "3", alias: "3", is_basic: 1 },
+  { name: "4", alias: "4", is_basic: 1 },
+  { name: "5", alias: "5", is_basic: 1 },
 
-  // Middle school (6-8)
-  { name: "6" },
-  { name: "7" },
-  { name: "8" },
+  // Middle school (6-8) - Basic levels
+  { name: "6", alias: "6", is_basic: 1 },
+  { name: "7", alias: "7", is_basic: 1 },
+  { name: "8", alias: "8", is_basic: 1 },
 
-  // Core high school math subjects
-  { name: "Pre-Algebra" },
-  { name: "Algebra 1" },
-  { name: "Geometry" },
-  { name: "Algebra 2" },
-  { name: "Trigonometry" },
-  { name: "Pre-Calculus" },
-  { name: "AP Pre-Calculus" },
-  { name: "Calculus" },
-  { name: "AP Calculus AB" },
-  { name: "AP Calculus BC" },
+  // Core high school math subjects - Basic levels
+  { name: "Algebra 1", alias: "Alg 1", is_basic: 1 },
+  { name: "Geometry", alias: "Geo", is_basic: 1 },
+  { name: "Algebra 2", alias: "Alg 2", is_basic: 1 },
+  { name: "Pre-Calculus", alias: "PC", is_basic: 1 },
 
-  // Additional high school and college math subjects
-  { name: "Statistics" },
-  { name: "AP Statistics" },
-  { name: "Discrete Mathematics" },
-  { name: "Linear Algebra" },
-  { name: "Differential Equations" },
-  { name: "Multivariable Calculus" },
-  { name: "Number Theory" },
-  { name: "Mathematical Logic" },
-  { name: "Abstract Algebra" },
-  { name: "Real Analysis" },
-  { name: "Complex Analysis" },
-  { name: "Topology" },
-  { name: "SAT Prep" },
+  // Advanced levels - Not basic
+  { name: "AP Pre-Calculus", alias: "AP PC", is_basic: 0 },
+  { name: "AP Calculus AB", alias: "Calc AB", is_basic: 0 },
+  { name: "AP Calculus BC", alias: "Calc BC", is_basic: 0 },
+
+  // Additional high school and college math subjects - Not basic
+  { name: "Statistics", alias: "Stat", is_basic: 0 },
+  { name: "AP Statistics", alias: "AP Stat", is_basic: 0 },
+  { name: "Discrete Mathematics", alias: "Discrete", is_basic: 0 },
+  { name: "Linear Algebra", alias: "Lin Alg", is_basic: 0 },
+  { name: "Differential Equations", alias: "Diff Eq", is_basic: 0 },
+  { name: "SAT Prep", alias: "SAT", is_basic: 0 },
 ];
 
 const roles = [

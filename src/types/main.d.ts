@@ -29,6 +29,8 @@ export type User = {
 export type GradeLevel = {
   id: number; // int
   name: GradeLevelName; // varchar
+  alias: string; // varchar
+  is_basic: boolean; // boolean
 };
 
 export type SessionType = {

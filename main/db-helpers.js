@@ -12,6 +12,7 @@ const {
   templates,
   templateWeekdays,
   instructors,
+  instructorGradeLevels,
   students,
   weeklySchedules,
   schedules,
@@ -60,7 +61,9 @@ const createTables = (db) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS grade_level (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL
+      name TEXT NOT NULL,
+      alias TEXT NOT NULL,
+      is_basic INTEGER NOT NULL DEFAULT 0
     )
   `);
 
@@ -210,10 +213,14 @@ const populateLookupTables = (db) => {
 
   if (gradeLevelCount.count === 0) {
     const insertGradeLevel = db.prepare(
-      "INSERT INTO grade_level (name) VALUES (?)"
+      "INSERT INTO grade_level (name, alias, is_basic) VALUES (?, ?, ?)"
     );
     for (const gradeLevel of gradeLevels) {
-      insertGradeLevel.run(gradeLevel.name);
+      insertGradeLevel.run(
+        gradeLevel.name,
+        gradeLevel.alias,
+        gradeLevel.is_basic || 0
+      );
     }
   }
 
@@ -313,6 +320,17 @@ const populateTestData = (db) => {
       instructor.last_name,
       instructor.cell_color,
       instructor.is_active
+    );
+  });
+
+  // Insert instructor grade level relationships
+  const insertInstructorGradeLevel = db.prepare(
+    "INSERT INTO instructor_grade_level (instructor_id, grade_level_id) VALUES (?, ?)"
+  );
+  instructorGradeLevels.forEach((relationship) => {
+    insertInstructorGradeLevel.run(
+      relationship.instructor_id,
+      relationship.grade_level_id
     );
   });
 

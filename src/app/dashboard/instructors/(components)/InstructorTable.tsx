@@ -12,6 +12,7 @@ import InstructorTableHeader, {
   SortField,
   SortDirection,
 } from "./InstructorTableHeader";
+import { DatabaseService } from "@/lib/db-service";
 // import InstructorEditModal from "./InstructorEditModal";
 
 interface InstructorWithDetails extends Instructor {
@@ -43,41 +44,38 @@ const InstructorTable = forwardRef<InstructorTableRef, Record<string, never>>(
     const fetchInstructors = useCallback(async () => {
       try {
         setIsLoading(true);
-        // TODO: Implement getInstructorsWithDetails in dbService
-        // For now, using mock data
-        const mockInstructors: InstructorWithDetails[] = [
-          {
-            id: 1,
-            centerId: 1,
-            firstName: "Sarah",
-            lastName: "Johnson",
-            cellColor: "#FF6B6B",
-            isActive: true,
-            gradeLevels: ["K", "1st", "2nd"],
-          },
-          {
-            id: 2,
-            centerId: 1,
-            firstName: "Mike",
-            lastName: "Chen",
-            cellColor: "#4ECDC4",
-            isActive: true,
-            gradeLevels: ["3rd", "4th", "5th"],
-          },
-          {
-            id: 3,
-            centerId: 1,
-            firstName: "Emily",
-            lastName: "Davis",
-            cellColor: "#45B7D1",
-            isActive: true,
-            gradeLevels: ["6th", "7th", "8th"],
-          },
-        ];
-        setCenterInstructors(mockInstructors);
-        console.log("Instructors:", mockInstructors);
+
+        // Debug: Check what methods are available
+        if (typeof window !== "undefined" && window.electron?.database) {
+          console.log(
+            "Available database methods:",
+            Object.keys(window.electron.database)
+          );
+        }
+
+        // Use the actual database service to fetch instructors with grade levels
+        const dbService = DatabaseService.getInstance();
+        const instructors = await dbService.getInstructorsWithGradeLevels(1); // Using center ID 1 for now
+        setCenterInstructors(instructors);
+        console.log("Instructors:", instructors);
       } catch (error) {
         console.error("Error fetching instructors:", error);
+        // Fallback to basic instructor fetch if the new method doesn't exist
+        try {
+          const dbService = DatabaseService.getInstance();
+          const basicInstructors = await dbService.getInstructors(1);
+          // Map to expected format with empty grade levels
+          const instructorsWithEmptyGrades = basicInstructors.map(
+            (instructor) => ({
+              ...instructor,
+              gradeLevels: [],
+            })
+          );
+          setCenterInstructors(instructorsWithEmptyGrades);
+          console.log("Fallback instructors:", instructorsWithEmptyGrades);
+        } catch (fallbackError) {
+          console.error("Fallback also failed:", fallbackError);
+        }
       } finally {
         setIsLoading(false);
       }

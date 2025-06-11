@@ -1,5 +1,11 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import {
+  getGradeLevels,
+  processGradeLevelsForInstructor,
+  type GradeLevelWithBasic,
+} from "@/lib/grade-level-utils";
 
 interface InstructorTableRowProps {
   instructorId: number;
@@ -27,6 +33,30 @@ export default function InstructorTableRow({
   onEdit,
   onViewSchedule,
 }: InstructorTableRowProps) {
+  const [allGradeLevels, setAllGradeLevels] = useState<GradeLevelWithBasic[]>(
+    []
+  );
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGradeLevels = async () => {
+      try {
+        const levels = await getGradeLevels();
+        setAllGradeLevels(levels);
+      } catch (error) {
+        console.error("Failed to fetch grade levels:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGradeLevels();
+  }, []);
+
+  const processedGradeLevels = loading
+    ? gradeLevels
+    : processGradeLevelsForInstructor(gradeLevels, allGradeLevels);
+
   return (
     <TableRow>
       <TableCell className={`${columnClasses.firstName} font-medium`}>
@@ -46,7 +76,7 @@ export default function InstructorTableRow({
       </TableCell>
       <TableCell className={columnClasses.gradeLevels}>
         <div className="flex flex-wrap gap-1">
-          {gradeLevels.map((level, index) => (
+          {processedGradeLevels.map((level: string, index: number) => (
             <span
               key={index}
               className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md"

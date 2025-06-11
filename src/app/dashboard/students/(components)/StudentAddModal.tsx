@@ -270,7 +270,12 @@ export default function StudentAddModal({
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>Add Student</Button>
+            <Button
+              onClick={handleSave}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Add Student
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -287,7 +292,12 @@ export default function StudentAddModal({
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button onClick={handleConfirmSave}>Yes, Add Student</Button>
+            <Button
+              onClick={handleConfirmSave}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Yes, Add Student
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

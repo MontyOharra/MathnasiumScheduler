@@ -307,7 +307,12 @@ export default function StudentEditModal({
                 <Button variant="outline" onClick={handleCancel}>
                   Cancel
                 </Button>
-                <Button onClick={handleSave}>Save Changes</Button>
+                <Button
+                  onClick={handleSave}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Save Changes
+                </Button>
               </>
             ) : (
               <Button onClick={handleEdit}>Edit</Button>
@@ -328,7 +333,12 @@ export default function StudentEditModal({
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button onClick={handleConfirmSave}>Yes, Save Changes</Button>
+            <Button
+              onClick={handleConfirmSave}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Yes, Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

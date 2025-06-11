@@ -268,6 +268,7 @@ export default function InstructorAddModal({
             </Button>
             <Button
               onClick={handleSave}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
               disabled={
                 !newInstructor.firstName ||
                 !newInstructor.lastName ||
@@ -293,7 +294,12 @@ export default function InstructorAddModal({
             >
               Cancel
             </Button>
-            <Button onClick={handleConfirmSave}>Confirm</Button>
+            <Button
+              onClick={handleConfirmSave}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Confirm
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

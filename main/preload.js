@@ -222,6 +222,29 @@ contextBridge.exposeInMainWorld("electron", {
         [instructorId, centerId]
       );
     },
+
+    // All instructors with their grade levels
+    getInstructorsWithGradeLevels: (centerId) => {
+      return ipcRenderer.invoke(
+        "db-custom-query",
+        `SELECT i.*, 
+         GROUP_CONCAT(gl.name) as grade_level_names,
+         GROUP_CONCAT(gl.alias) as grade_level_aliases,
+         GROUP_CONCAT(igl.grade_level_id) as grade_level_ids
+         FROM instructor i
+         LEFT JOIN instructor_grade_level igl ON i.id = igl.instructor_id
+         LEFT JOIN grade_level gl ON igl.grade_level_id = gl.id
+         WHERE i.center_id = ? AND i.is_active = 1
+         GROUP BY i.id
+         ORDER BY i.last_name, i.first_name`,
+        [centerId]
+      );
+    },
+
+    // Get all grade levels with aliases
+    getGradeLevels: () => {
+      return ipcRenderer.invoke("db-get-all", "grade_level");
+    },
   },
 });
 

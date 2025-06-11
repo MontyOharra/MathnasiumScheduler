@@ -297,6 +297,7 @@ export default function InstructorEditModal({
             </Button>
             <Button
               onClick={handleSave}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
               disabled={
                 !instructor.firstName ||
                 !instructor.lastName ||
@@ -322,7 +323,12 @@ export default function InstructorEditModal({
             >
               Cancel
             </Button>
-            <Button onClick={handleConfirmSave}>Save Changes</Button>
+            <Button
+              onClick={handleConfirmSave}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

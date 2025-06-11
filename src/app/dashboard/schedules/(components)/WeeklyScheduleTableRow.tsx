@@ -45,7 +45,7 @@ export default function WeeklyScheduleTableRow({
             variant="ghost"
             size="icon"
             onClick={() => onEdit(weeklySchedule)}
-            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+            className="text-red-500 hover:text-red-700 hover:bg-red-50"
           >
             <PencilIcon className="h-4 w-4" />
           </Button>

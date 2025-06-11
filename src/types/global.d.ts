@@ -57,6 +57,7 @@ interface ElectronAPI {
       instructorId: number,
       centerId: number
     ) => Promise<DbQueryResult>;
+    getInstructorsWithGradeLevels: (centerId: number) => Promise<DbQueryResult>;
     getScheduleWithDetails: (
       scheduleId: number,
       centerId: number
@@ -69,6 +70,7 @@ interface ElectronAPI {
       scheduleId: number,
       centerId: number
     ) => Promise<DbQueryResult>;
+    getGradeLevels: () => Promise<DbQueryResult>;
   };
 }
 

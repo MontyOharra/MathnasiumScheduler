@@ -200,6 +200,72 @@ export class DatabaseService {
     return id;
   }
 
+  async getInstructorsWithGradeLevels(
+    centerId: number
+  ): Promise<Array<Instructor & { gradeLevels: string[] }>> {
+    this.checkElectron();
+
+    try {
+      // Try the dedicated method first
+      const results =
+        await window.electron.database.getInstructorsWithGradeLevels(centerId);
+      this.handleError(results);
+
+      return results.map((row: Record<string, unknown>) => {
+        const instructor = snakeToCamel<Instructor>(row);
+        // Use aliases for compact display, fallback to names if aliases not available
+        const gradeLevelAliases = row.grade_level_aliases
+          ? String(row.grade_level_aliases).split(",")
+          : [];
+        const gradeLevelNames = row.grade_level_names
+          ? String(row.grade_level_names).split(",")
+          : [];
+
+        return {
+          ...instructor,
+          gradeLevels:
+            gradeLevelAliases.length > 0 ? gradeLevelAliases : gradeLevelNames,
+        };
+      });
+    } catch (error) {
+      // Fallback to custom query if the dedicated method doesn't exist
+      console.warn(
+        "getInstructorsWithGradeLevels method not available, using fallback"
+      );
+      const results = await window.electron.database.customQuery(
+        `SELECT i.*, 
+         GROUP_CONCAT(gl.name) as grade_level_names,
+         GROUP_CONCAT(gl.alias) as grade_level_aliases,
+         GROUP_CONCAT(igl.grade_level_id) as grade_level_ids
+         FROM instructor i
+         LEFT JOIN instructor_grade_level igl ON i.id = igl.instructor_id
+         LEFT JOIN grade_level gl ON igl.grade_level_id = gl.id
+         WHERE i.center_id = ? AND i.is_active = 1
+         GROUP BY i.id
+         ORDER BY i.last_name, i.first_name`,
+        [centerId]
+      );
+      this.handleError(results);
+
+      return results.map((row: Record<string, unknown>) => {
+        const instructor = snakeToCamel<Instructor>(row);
+        // Use aliases for compact display, fallback to names if aliases not available
+        const gradeLevelAliases = row.grade_level_aliases
+          ? String(row.grade_level_aliases).split(",")
+          : [];
+        const gradeLevelNames = row.grade_level_names
+          ? String(row.grade_level_names).split(",")
+          : [];
+
+        return {
+          ...instructor,
+          gradeLevels:
+            gradeLevelAliases.length > 0 ? gradeLevelAliases : gradeLevelNames,
+        };
+      });
+    }
+  }
+
   async addInstructor(
     instructor: Omit<Instructor, "id">,
     gradeLevels: GradeLevel[]
@@ -293,13 +359,17 @@ export class DatabaseService {
     }
   }
 
-  async getGradeLevels(): Promise<{ id: number; name: string }[]> {
+  async getGradeLevels(): Promise<
+    { id: number; name: string; alias: string; is_basic: boolean }[]
+  > {
     this.checkElectron();
-    const results = await window.electron.database.getAll("grade_level");
+    const results = await window.electron.database.getGradeLevels();
     this.handleError(results);
     return results.map((gradeLevel: Record<string, unknown>) => ({
       id: gradeLevel.id as number,
       name: gradeLevel.name as string,
+      alias: gradeLevel.alias as string,
+      is_basic: Boolean(gradeLevel.is_basic),
     }));
   }
 
