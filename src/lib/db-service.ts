@@ -5,7 +5,7 @@ import {
   Student,
   WeeklyScheduleTemplate,
   Schedule,
-  Cell,
+  ScheduleCell,
   GradeLevel,
   WeeklySchedule,
 } from "../types/main";
@@ -316,6 +316,16 @@ export class DatabaseService {
     }));
   }
 
+  async getWeekdayById(id: number): Promise<{ id: number; name: string }> {
+    this.checkElectron();
+    const result = await window.electron.database.getById("weekday", id);
+    this.handleError(result);
+    return {
+      id: result.id as number,
+      name: result.name as string,
+    };
+  }
+
   async updateStudent(id: number, student: Partial<Student>): Promise<boolean> {
     this.checkElectron();
     const dbStudent = camelToSnake(student);
@@ -400,13 +410,53 @@ export class DatabaseService {
     );
   }
 
+  async getSchedulesByWeeklyScheduleId(
+    weeklyScheduleId: number
+  ): Promise<Schedule[]> {
+    this.checkElectron();
+    const results = await window.electron.database.customQuery(
+      "SELECT * FROM schedule WHERE weekly_schedule_id = ?",
+      [weeklyScheduleId]
+    );
+    this.handleError(results);
+    return results.map((schedule: Record<string, unknown>) =>
+      snakeToCamel<Schedule>(schedule)
+    );
+  }
+
+  async getTemplateWeekdayByTemplateAndWeekday(
+    templateId: number,
+    weekdayId: number
+  ): Promise<{
+    startTime: string;
+    endTime: string;
+    numPods: number;
+    intervalLength: number;
+  } | null> {
+    this.checkElectron();
+    const results = await window.electron.database.customQuery(
+      `SELECT wtw.start_time, wtw.end_time, wtw.num_pods, wst.interval_length 
+       FROM weekly_schedule_template_weekday wtw 
+       JOIN weekly_schedule_template wst ON wtw.template_id = wst.id 
+       WHERE wtw.template_id = ? AND wtw.weekday_id = ?`,
+      [templateId, weekdayId]
+    );
+    this.handleError(results);
+    if (results.length === 0) return null;
+    return snakeToCamel<{
+      startTime: string;
+      endTime: string;
+      numPods: number;
+      intervalLength: number;
+    }>(results[0]);
+  }
+
   async getScheduleWithDetails(
-    id: string,
+    id: number,
     centerId: number
   ): Promise<
-    Schedule & {
+    WeeklySchedule & {
       templateName: string;
-      numPods: number;
       intervalLength: number;
       addedByName: string;
     }
@@ -418,43 +468,57 @@ export class DatabaseService {
     );
     this.handleError(result);
     return snakeToCamel<
-      Schedule & {
+      WeeklySchedule & {
         templateName: string;
-        numPods: number;
         intervalLength: number;
         addedByName: string;
       }
     >(result[0]);
   }
 
-  // Cells (instructor-student assignments)
-  async getCellsForSchedule(
-    scheduleId: string,
+  // Schedule Cells (instructor-student assignments)
+  async getScheduleCellsForSchedule(
+    scheduleId: number,
     centerId: number
   ): Promise<
-    (Cell & {
-      instructorFirstName: string;
-      instructorLastName: string;
-      studentFirstName: string;
-      studentLastName: string;
+    (ScheduleCell & {
+      instructorFirstName: string | null;
+      instructorLastName: string | null;
+      studentFirstName: string | null;
+      studentLastName: string | null;
     })[]
   > {
     this.checkElectron();
-    const results = await window.electron.database.getCellsForSchedule(
+    const results = await window.electron.database.getScheduleCellsForSchedule(
       scheduleId,
       centerId
     );
     this.handleError(results);
     return results.map((cell: Record<string, unknown>) =>
       snakeToCamel<
-        Cell & {
-          instructorFirstName: string;
-          instructorLastName: string;
-          studentFirstName: string;
-          studentLastName: string;
+        ScheduleCell & {
+          instructorFirstName: string | null;
+          instructorLastName: string | null;
+          studentFirstName: string | null;
+          studentLastName: string | null;
         }
       >(cell)
     );
+  }
+
+  // Legacy method for backwards compatibility
+  async getCellsForSchedule(
+    scheduleId: number,
+    centerId: number
+  ): Promise<
+    (ScheduleCell & {
+      instructorFirstName: string | null;
+      instructorLastName: string | null;
+      studentFirstName: string | null;
+      studentLastName: string | null;
+    })[]
+  > {
+    return this.getScheduleCellsForSchedule(scheduleId, centerId);
   }
 
   // Custom queries

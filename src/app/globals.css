@@ -120,3 +120,54 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Modern floating scrollbar styles */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  height: 12px;
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+  margin: 20px 8px 4px 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+  transition: all 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+  background-clip: content-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: rgba(0, 0, 0, 0.6);
+  background-clip: content-box;
+}
+
+/* Dark mode scrollbar */
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  background-clip: content-box;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+  background-clip: content-box;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.7);
+  background-clip: content-box;
+}

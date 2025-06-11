@@ -88,7 +88,6 @@ contextBridge.exposeInMainWorld("electron", {
           WHERE s.center_id = ?
         `;
 
-        console;
         // Add sorting if specified
         if (sort?.field) {
           const sortField = {
@@ -173,27 +172,40 @@ contextBridge.exposeInMainWorld("electron", {
     getScheduleWithDetails: (scheduleId, centerId) => {
       return ipcRenderer.invoke(
         "db-custom-query",
-        `SELECT s.*, t.name as template_name, t.interval_length,
-         (SELECT COUNT(*) FROM cell WHERE schedule_id = s.id) as num_pods,
+        `SELECT ws.*, t.name as template_name, t.interval_length,
          u.first_name || ' ' || u.last_name as added_by_name
-         FROM schedule s
-         LEFT JOIN weekly_schedule_template t ON s.template_id = t.id
-         LEFT JOIN user u ON s.added_by_user_id = u.id
-         WHERE s.id = ? AND s.center_id = ?`,
+         FROM weekly_schedule ws
+         LEFT JOIN weekly_schedule_template t ON ws.template_id = t.id
+         LEFT JOIN user u ON ws.added_by_user_id = u.id
+         WHERE ws.id = ? AND ws.center_id = ?`,
         [scheduleId, centerId]
       );
     },
 
-    // Cells
+    // Schedule Cells
+    getScheduleCellsForSchedule: (scheduleId, centerId) => {
+      return ipcRenderer.invoke(
+        "db-custom-query",
+        `SELECT sc.*, i.first_name as instructor_first_name, i.last_name as instructor_last_name,
+         s.first_name as student_first_name, s.last_name as student_last_name
+         FROM schedule_cell sc
+         LEFT JOIN instructor i ON sc.instructor_id = i.id
+         LEFT JOIN student s ON sc.student_id = s.id
+         WHERE sc.schedule_id = ? AND sc.center_id = ?`,
+        [scheduleId, centerId]
+      );
+    },
+
+    // Legacy method for backwards compatibility
     getCellsForSchedule: (scheduleId, centerId) => {
       return ipcRenderer.invoke(
         "db-custom-query",
-        `SELECT c.*, i.first_name as instructor_first_name, i.last_name as instructor_last_name,
+        `SELECT sc.*, i.first_name as instructor_first_name, i.last_name as instructor_last_name,
          s.first_name as student_first_name, s.last_name as student_last_name
-         FROM cell c
-         LEFT JOIN instructor i ON c.instructor_id = i.id
-         LEFT JOIN student s ON c.student_id = s.id
-         WHERE c.schedule_id = ? AND c.center_id = ?`,
+         FROM schedule_cell sc
+         LEFT JOIN instructor i ON sc.instructor_id = i.id
+         LEFT JOIN student s ON sc.student_id = s.id
+         WHERE sc.schedule_id = ? AND sc.center_id = ?`,
         [scheduleId, centerId]
       );
     },

@@ -1,168 +1,180 @@
 import { useEffect, useState } from "react";
-import { Cell } from "@/app/dashboard/schedules/(components)/Cell";
-import { format, parse, addMinutes } from "date-fns";
+import { format } from "date-fns";
+import { Printer, Download } from "lucide-react";
 import dbService from "@/lib/db-service";
+import { ScheduleCell } from "./ScheduleCell";
 
 interface ScheduleProps {
-  weeklyScheduleId: string;
+  scheduleId: number;
+  scheduleDate: Date;
   weekdayId: number;
+  numPods: number;
   startTime: string;
   endTime: string;
-  numColumns: number;
-}
-
-interface ScheduleData {
-  id: number;
-  scheduleDate: string;
-  cells: {
-    id: number;
-    instructorId: number;
-    studentId: number;
-    timeStart: string;
-    timeEnd: string;
-    columnNumber: number;
-    instructorFirstName: string;
-    instructorLastName: string;
-    studentFirstName: string;
-    studentLastName: string;
-  }[];
+  intervalLength: number;
 }
 
 export function Schedule({
-  weeklyScheduleId,
+  scheduleId,
+  scheduleDate,
   weekdayId,
+  numPods,
   startTime,
   endTime,
-  numColumns,
+  intervalLength,
 }: ScheduleProps) {
-  const [scheduleData, setScheduleData] = useState<ScheduleData | null>(null);
+  const [weekdayName, setWeekdayName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchScheduleData = async () => {
+    const fetchWeekdayName = async () => {
       try {
-        // First get the schedule for this weekday
-        const schedules = await dbService.customQuery<ScheduleData>(
-          `SELECT s.id, s.schedule_date as scheduleDate
-           FROM schedule s
-           JOIN weekly_schedule ws ON s.weekly_schedule_id = ws.id
-           WHERE ws.id = ? AND strftime('%w', s.schedule_date) = ?`,
-          [weeklyScheduleId, weekdayId.toString()]
-        );
-
-        if (schedules.length === 0) {
-          setIsLoading(false);
-          return;
+        const weekday = await dbService.getWeekdayById(weekdayId);
+        if (weekday) {
+          setWeekdayName(weekday.name.substring(0, 3)); // Get first 3 letters
         }
-
-        const schedule = schedules[0];
-
-        // Then get the cells for this schedule
-        const cells = await dbService.customQuery(
-          `SELECT c.*, 
-           i.first_name as instructor_first_name, i.last_name as instructor_last_name,
-           s.first_name as student_first_name, s.last_name as student_last_name
-           FROM cell c
-           LEFT JOIN instructor i ON c.instructor_id = i.id
-           LEFT JOIN student s ON c.student_id = s.id
-           WHERE c.schedule_id = ?
-           ORDER BY c.time_start, c.column_number`,
-          [schedule.id]
-        );
-
-        setScheduleData({
-          ...schedule,
-          cells: cells.map((cell: any) => ({
-            id: cell.id,
-            instructorId: cell.instructor_id,
-            studentId: cell.student_id,
-            timeStart: cell.time_start,
-            timeEnd: cell.time_end,
-            columnNumber: cell.column_number,
-            instructorFirstName: cell.instructor_first_name,
-            instructorLastName: cell.instructor_last_name,
-            studentFirstName: cell.student_first_name,
-            studentLastName: cell.student_last_name,
-          })),
-        });
       } catch (error) {
-        console.error("Error fetching schedule data:", error);
+        console.error("Failed to fetch weekday:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchScheduleData();
-  }, [weeklyScheduleId, weekdayId]);
+    fetchWeekdayName();
+  }, [weekdayId]);
+
+  // Helper function to add minutes to a time string
+  const addMinutes = (timeString: string, minutes: number): string => {
+    const [hours, mins] = timeString.split(":").map(Number);
+    const totalMinutes = hours * 60 + mins + minutes;
+    const newHours = Math.floor(totalMinutes / 60);
+    const newMins = totalMinutes % 60;
+    return `${newHours.toString().padStart(2, "0")}:${newMins
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  // Helper function to convert 24-hour time to 12-hour format without AM/PM
+  const convertTo12Hour = (timeString: string): string => {
+    const [hours, mins] = timeString.split(":").map(Number);
+    const hour12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    return `${hour12}:${mins.toString().padStart(2, "0")}`;
+  };
+
+  // Generate time slots based on start time, end time, and interval
+  const generateTimeSlots = (
+    startTime: string,
+    endTime: string,
+    intervalMinutes: number
+  ) => {
+    const slots = [];
+    let currentTime = startTime;
+
+    while (currentTime < endTime) {
+      const nextTime = addMinutes(currentTime, intervalMinutes);
+      slots.push({
+        start: currentTime,
+        end: nextTime,
+      });
+      currentTime = nextTime;
+    }
+
+    return slots;
+  };
 
   if (isLoading) {
-    return <div className="animate-pulse bg-gray-100 rounded-lg h-full" />;
+    return <div>Loading...</div>;
   }
 
-  if (!scheduleData) {
-    return (
-      <div className="border rounded-lg p-4">No schedule data available</div>
-    );
-  }
-
-  // Generate time slots
-  const start = parse(startTime, "HH:mm", new Date());
-  const end = parse(endTime, "HH:mm", new Date());
-  const timeSlots = [];
-  let currentTime = start;
-  while (currentTime < end) {
-    timeSlots.push(format(currentTime, "HH:mm"));
-    currentTime = addMinutes(currentTime, 30); // Assuming 30-minute intervals
-  }
+  const formattedDate = format(scheduleDate, "MM/dd/yyyy");
+  const timeSlots = generateTimeSlots(startTime, endTime, intervalLength);
 
   return (
-    <div className="border rounded-lg p-4">
-      <h3 className="font-semibold mb-4">
-        {format(new Date(scheduleData.scheduleDate), "EEEE, MMMM d")}
-      </h3>
-      <div className="grid grid-rows-[auto_1fr] gap-2">
-        {/* Time slots */}
-        <div className="grid grid-cols-[auto_1fr] gap-2">
-          <div className="w-20" /> {/* Time column spacer */}
-          <div className="grid grid-cols-${numColumns} gap-2">
-            {Array.from({ length: numColumns }, (_, i) => (
-              <div key={i} className="text-center font-medium">
-                Column {i + 1}
-              </div>
-            ))}
-          </div>
+    <div className="p-4 border border-gray-500 rounded-lg w-full max-w-full">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">
+          {weekdayName} - {formattedDate}
+        </h1>
+        <div className="flex gap-2">
+          <button className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm">
+            <Printer size={16} />
+            Print
+          </button>
+          <button className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm">
+            <Download size={16} />
+            Import Sessions
+          </button>
         </div>
+      </div>
 
-        {/* Schedule grid */}
-        <div className="grid grid-cols-[auto_1fr] gap-2">
-          {/* Time labels */}
-          <div className="grid grid-rows-[repeat(${timeSlots.length},minmax(60px,1fr))] gap-2">
-            {timeSlots.map((time) => (
-              <div key={time} className="text-sm text-gray-500">
-                {time}
+      {/* Horizontally scrollable grid container */}
+      <div className="rounded w-full overflow-hidden">
+        <div className="overflow-x-auto overflow-y-hidden h-auto custom-scrollbar pb-6">
+          <div className="min-w-fit">
+            {/* Two-level header: Pods and Student Slots */}
+            {/* Top level: Pod headers */}
+            <div className="flex">
+              <div className="w-20 h-8 border border-gray-400 bg-gray-200 flex items-center justify-center text-xs font-bold">
+                Time
               </div>
-            ))}
-          </div>
+              {Array.from({ length: numPods }, (_, podIndex) => (
+                <div
+                  key={podIndex}
+                  className="flex border-r-2 border-r-gray-500"
+                >
+                  <div className="w-72 h-8 border border-gray-400 bg-gray-200 flex items-center justify-center text-xs font-bold">
+                    Pod {podIndex + 1}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-          {/* Cells grid */}
-          <div className="grid grid-cols-${numColumns} gap-2">
-            {timeSlots.map((time) => (
-              <div key={time} className="grid grid-cols-${numColumns} gap-2">
-                {Array.from({ length: numColumns }, (_, colIndex) => {
-                  const cell = scheduleData.cells.find(
-                    (c) =>
-                      c.timeStart.startsWith(time) &&
-                      c.columnNumber === colIndex + 1
-                  );
-                  return (
-                    <Cell
-                      key={`${time}-${colIndex}`}
-                      cell={cell}
-                      timeSlot={time}
-                      columnNumber={colIndex + 1}
-                    />
-                  );
-                })}
+            {/* Second level: Student slot headers */}
+            <div className="flex">
+              <div className="w-20 h-6 border border-gray-400 bg-gray-100 flex items-center justify-center text-xs font-semibold"></div>
+              {Array.from({ length: numPods }, (_, podIndex) => (
+                <div
+                  key={`pod-${podIndex}`}
+                  className="flex border-r-2 border-r-gray-500"
+                >
+                  {Array.from({ length: 3 }, (_, studentIndex) => (
+                    <div
+                      key={`${podIndex}-${studentIndex}`}
+                      className="w-24 h-6 border border-gray-400 bg-gray-100 flex items-center justify-center text-xs font-semibold"
+                    >
+                      S{studentIndex + 1}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Time slots rows */}
+            {timeSlots.map((timeSlot) => (
+              <div key={`${timeSlot.start}-${timeSlot.end}`} className="flex">
+                {/* Time label column */}
+                <div className="w-20 h-12 border border-gray-400 bg-gray-50 flex items-center justify-center text-xs font-medium">
+                  {convertTo12Hour(timeSlot.start)}
+                </div>
+
+                {/* Schedule cells for this time slot */}
+                {Array.from({ length: numPods }, (_, podIndex) => (
+                  <div
+                    key={`pod-${podIndex}-${timeSlot.start}`}
+                    className="flex border-r-2 border-r-gray-500"
+                  >
+                    {Array.from({ length: 3 }, (_, studentIndex) => (
+                      <ScheduleCell
+                        key={`${timeSlot.start}-${podIndex}-${studentIndex}`}
+                        timeStart={timeSlot.start}
+                        timeEnd={timeSlot.end}
+                        columnNumber={podIndex * 3 + studentIndex + 1}
+                        podNumber={podIndex + 1}
+                        studentSlot={studentIndex + 1}
+                      />
+                    ))}
+                  </div>
+                ))}
               </div>
             ))}
           </div>

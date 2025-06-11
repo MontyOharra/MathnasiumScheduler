@@ -75,7 +75,7 @@ export type Student = {
      Scheduling Structures
      ──────────────────────────────────────── */
 export type WeeklyScheduleTemplate = {
-  id: string; // varchar (UUID)
+  id: number; // int
   centerId: number; // int → Center.id
   name: string; // varchar
   isDefault: boolean; // boolean
@@ -83,20 +83,20 @@ export type WeeklyScheduleTemplate = {
 };
 
 export type WeeklyScheduleTemplateWeekday = {
-  templateId: string; // varchar → WeeklyScheduleTemplate.id
+  templateId: number; // int → WeeklyScheduleTemplate.id
   weekdayId: number; // int → Weekday.id
   startTime: string; // time (e.g. "14:30:00")
   endTime: string; // time
-  numColumns: number; // int
+  numPods: number; // int
 };
 
 /* ────────────────────────────────────────
      Schedules & Sessions
      ──────────────────────────────────────── */
 export type WeeklySchedule = {
-  id: string;
+  id: number;
   centerId: number;
-  templateId: string;
+  templateId: number;
   addedByUserId: number;
   dateCreated: Date;
   dateLastModified: Date;
@@ -104,13 +104,14 @@ export type WeeklySchedule = {
 };
 
 export type Schedule = {
-  id: string; // varchar (UUID)
-  weeklyScheduleId: string; // varchar → WeeklySchedule.id
-  scheduleDate: Date; // datetime
+  id: number; // int
+  weeklyScheduleId: number; // int → WeeklySchedule.id
+  scheduleDate: Date; // date
+  weekdayId: number; // int → Weekday.id
 };
 
 export type ScheduleSession = {
-  scheduleId: string; // varchar → Schedule.id
+  scheduleId: number; // int → Schedule.id
   sessionId: number; // int → Session.id
 };
 
@@ -125,13 +126,16 @@ export type Session = {
 /* ────────────────────────────────────────
      Cells (time-slot assignments)
      ──────────────────────────────────────── */
-export type Cell = {
+export type ScheduleCell = {
   id: number; // int
   centerId: number; // int → Center.id
-  scheduleId: string; // varchar → Schedule.id
-  instructorId: number; // int → Instructor.id
-  studentId: number; // int → Student.id
+  scheduleId: number; // int → Schedule.id
+  instructorId: number | null; // int → Instructor.id (nullable)
+  studentId: number | null; // int → Student.id (nullable)
   timeStart: Date; // datetime
   timeEnd: Date; // datetime
   columnNumber: number; // int
 };
+
+// Legacy type alias for backwards compatibility
+export type Cell = ScheduleCell;

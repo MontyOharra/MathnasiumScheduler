@@ -1,9 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import dbService from "@/lib/db-service";
-import { Student } from "@/types/main";
-import { gradeLevels } from "@/data/static-data/grade-levels";
+import { useState, useRef } from "react";
 import StudentTable from "./(components)/StudentTable";
 import StudentAddModal from "./(components)/StudentAddModal";
 

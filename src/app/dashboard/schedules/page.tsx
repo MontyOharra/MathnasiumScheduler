@@ -2,7 +2,7 @@
 
 import NewScheduleButton from "@/app/dashboard/schedules/(components)/NewScheduleButton";
 import ExpandableScheduleTable from "@/app/dashboard/schedules/(components)/ExpandableScheduleTable";
-import { Schedule, WeeklySchedule } from "@/types/main";
+import { WeeklySchedule } from "@/types/main";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dbService from "@/lib/db-service";
@@ -32,7 +32,7 @@ export default function SchedulesPage() {
 
   const handleEdit = (weeklySchedule: WeeklySchedule) => {
     console.log("Edit schedule:", weeklySchedule);
-    router.push(`/dashboard/schedules/${weeklySchedule.id}/edit`);
+    router.push(`/dashboard/schedules/${weeklySchedule.id}`);
   };
 
   const handlePrint = (weeklySchedule: WeeklySchedule) => {

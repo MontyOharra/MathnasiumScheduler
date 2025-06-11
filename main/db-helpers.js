@@ -1,5 +1,24 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { app } = require("electron");
+const {
+  weekdays,
+  gradeLevels,
+  roles,
+  sessionTypes,
+} = require("./db-lookup-data");
+const {
+  center,
+  adminUser,
+  templates,
+  templateWeekdays,
+  instructors,
+  students,
+  weeklySchedules,
+  schedules,
+  sessions,
+  scheduleSessions,
+} = require("./db-test-data");
+const { scheduleCells } = require("./db-schedule-cells");
 
 // Use app.log for main process logging
 app.log = app.log || console.log;
@@ -96,7 +115,7 @@ const createTables = (db) => {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS weekly_schedule_template (
-      id TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       center_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       is_default INTEGER NOT NULL,
@@ -106,11 +125,11 @@ const createTables = (db) => {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS weekly_schedule_template_weekday (
-      template_id TEXT NOT NULL,
+      template_id INTEGER NOT NULL,
       weekday_id INTEGER NOT NULL,
       start_time TEXT NOT NULL,
       end_time TEXT NOT NULL,
-      num_columns INTEGER NOT NULL,
+      num_pods INTEGER NOT NULL,
       PRIMARY KEY (template_id, weekday_id)
     )
   `);
@@ -119,11 +138,11 @@ const createTables = (db) => {
     CREATE TABLE IF NOT EXISTS weekly_schedule (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       center_id INTEGER NOT NULL,
-      template_id TEXT NOT NULL,
+      template_id INTEGER NOT NULL,
       added_by_user_id INTEGER NOT NULL,
-      date_created TEXT NOT NULL,
-      date_last_modified TEXT NOT NULL,
-      week_start_date TEXT NOT NULL
+      date_created DATETIME NOT NULL,
+      date_last_modified DATETIME NOT NULL,
+      week_start_date DATE NOT NULL
     )
   `);
 
@@ -131,7 +150,8 @@ const createTables = (db) => {
     CREATE TABLE IF NOT EXISTS schedule (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       weekly_schedule_id INTEGER NOT NULL,
-      schedule_date TEXT NOT NULL
+      schedule_date DATE NOT NULL,
+      weekday_id INTEGER NOT NULL
     )
   `);
 
@@ -149,19 +169,19 @@ const createTables = (db) => {
       center_id INTEGER NOT NULL,
       student_id INTEGER NOT NULL,
       session_type_id INTEGER NOT NULL,
-      date TEXT NOT NULL
+      date DATETIME NOT NULL
     )
   `);
 
   db.exec(`
-    CREATE TABLE IF NOT EXISTS cell (
+    CREATE TABLE IF NOT EXISTS schedule_cell (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       center_id INTEGER NOT NULL,
       schedule_id INTEGER NOT NULL,
       instructor_id INTEGER NOT NULL,
       student_id INTEGER NOT NULL,
-      time_start TEXT NOT NULL,
-      time_end TEXT NOT NULL,
+      time_start DATETIME NOT NULL,
+      time_end DATETIME NOT NULL,
       column_number INTEGER NOT NULL
     )
   `);
@@ -177,18 +197,7 @@ const populateLookupTables = (db) => {
     .get();
 
   if (weekdayCount.count === 0) {
-    const weekdays = [
-      { name: "Sunday" },
-      { name: "Monday" },
-      { name: "Tuesday" },
-      { name: "Wednesday" },
-      { name: "Thursday" },
-      { name: "Friday" },
-      { name: "Saturday" },
-    ];
-
     const insertWeekday = db.prepare("INSERT INTO weekday (name) VALUES (?)");
-
     for (const weekday of weekdays) {
       insertWeekday.run(weekday.name);
     }
@@ -200,82 +209,21 @@ const populateLookupTables = (db) => {
     .get();
 
   if (gradeLevelCount.count === 0) {
-    const gradeLevels = [
-      // Elementary school (K-5)
-      { name: "K" },
-      { name: "1" },
-      { name: "2" },
-      { name: "3" },
-      { name: "4" },
-      { name: "5" },
-
-      // Middle school (6-8)
-      { name: "6" },
-      { name: "7" },
-      { name: "8" },
-
-      // Core high school math subjects
-      { name: "Pre-Algebra" },
-      { name: "Algebra 1" },
-      { name: "Geometry" },
-      { name: "Algebra 2" },
-      { name: "Trigonometry" },
-      { name: "Pre-Calculus" },
-      { name: "AP Pre-Calculus" },
-      { name: "Calculus" },
-      { name: "AP Calculus AB" },
-      { name: "AP Calculus BC" },
-
-      // Additional high school and college math subjects
-      { name: "Statistics" },
-      { name: "AP Statistics" },
-      { name: "Discrete Mathematics" },
-      { name: "Linear Algebra" },
-      { name: "Differential Equations" },
-      { name: "Multivariable Calculus" },
-      { name: "Number Theory" },
-      { name: "Mathematical Logic" },
-      { name: "Abstract Algebra" },
-      { name: "Real Analysis" },
-      { name: "Complex Analysis" },
-      { name: "Topology" },
-      { name: "SAT Prep" },
-    ];
-
     const insertGradeLevel = db.prepare(
       "INSERT INTO grade_level (name) VALUES (?)"
     );
-
     for (const gradeLevel of gradeLevels) {
       insertGradeLevel.run(gradeLevel.name);
     }
   }
 
-  // Optionally populate default roles if empty
+  // Populate roles if empty
   const roleCount = db.prepare("SELECT COUNT(*) as count FROM role").get();
 
   if (roleCount.count === 0) {
-    const roles = [
-      { code: "master", description: "Master administrator with full access" },
-      {
-        code: "admin",
-        description: "Administrator with center management capabilities",
-      },
-      {
-        code: "tutor",
-        description:
-          "Tutor with scheduling and student management capabilities",
-      },
-      {
-        code: "viewer",
-        description: "Read-only access to schedules and information",
-      },
-    ];
-
     const insertRole = db.prepare(
       "INSERT INTO role (code, description) VALUES (?, ?)"
     );
-
     for (const role of roles) {
       insertRole.run(role.code, role.description);
     }
@@ -287,43 +235,9 @@ const populateLookupTables = (db) => {
     .get();
 
   if (sessionTypeCount.count === 0) {
-    const sessionTypes = [
-      {
-        id: 1,
-        code: "REGULAR",
-        length: 60,
-        styling: "default",
-      },
-      {
-        id: 2,
-        code: "HOMEWORK HELP",
-        length: 60,
-        styling: "homework-help",
-      },
-      {
-        id: 3,
-        code: "INITIAL ASSESSMENT",
-        length: 90,
-        styling: "initial-assessment",
-      },
-      {
-        id: 4,
-        code: "CHECKUP",
-        length: 60,
-        styling: "checkup",
-      },
-      {
-        id: 5,
-        code: "ONE-ON-ONE",
-        length: 90,
-        styling: "one-on-one",
-      },
-    ];
-
     const insertSessionType = db.prepare(
       "INSERT INTO session_type (id, code, length, styling) VALUES (?, ?, ?, ?)"
     );
-
     for (const sessionType of sessionTypes) {
       insertSessionType.run(
         sessionType.id,
@@ -339,27 +253,13 @@ const populateLookupTables = (db) => {
  * Populates the database with test data
  */
 const populateTestData = (db) => {
-  // 1. First, insert the center (parent table)
-  const center = {
-    id: 1,
-    name: "Test Center",
-  };
+  // Insert center
   db.prepare("INSERT INTO center (id, name) VALUES (?, ?)").run(
     center.id,
     center.name
   );
 
-  // 6. Insert admin user (needed for schedules)
-  const adminUser = {
-    id: 1,
-    center_id: center.id,
-    role_id: 1, // ADMIN role
-    email: "admin@test.com",
-    first_name: "Admin",
-    last_name: "User",
-    invited_by_id: null,
-    is_active: 1,
-  };
+  // Insert admin user
   db.prepare(
     "INSERT INTO user (id, center_id, role_id, email, first_name, last_name, invited_by_id, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
   ).run(
@@ -373,23 +273,7 @@ const populateTestData = (db) => {
     adminUser.is_active
   );
 
-  // 7. Insert schedule templates
-  const templates = [
-    {
-      id: "spring-schedule",
-      center_id: center.id,
-      name: "Spring Schedule",
-      is_default: 1,
-      interval_length: 30,
-    },
-    {
-      id: "summer-schedule",
-      center_id: center.id,
-      name: "Summer Schedule",
-      is_default: 0,
-      interval_length: 30,
-    },
-  ];
+  // Insert schedule templates
   const insertTemplate = db.prepare(
     "INSERT INTO weekly_schedule_template (id, center_id, name, is_default, interval_length) VALUES (?, ?, ?, ?, ?)"
   );
@@ -403,46 +287,9 @@ const populateTestData = (db) => {
     );
   });
 
-  // 8. Insert schedule template weekdays
-  const templateWeekdays = [
-    {
-      template_id: "spring-schedule",
-      weekday_id: 1,
-      start_time: "15:30",
-      end_time: "19:30",
-      num_columns: 3,
-    },
-    {
-      template_id: "spring-schedule",
-      weekday_id: 2,
-      start_time: "15:30",
-      end_time: "19:30",
-      num_columns: 3,
-    },
-    {
-      template_id: "spring-schedule",
-      weekday_id: 3,
-      start_time: "15:30",
-      end_time: "19:30",
-      num_columns: 3,
-    },
-    {
-      template_id: "spring-schedule",
-      weekday_id: 4,
-      start_time: "15:30",
-      end_time: "19:30",
-      num_columns: 3,
-    },
-    {
-      template_id: "spring-schedule",
-      weekday_id: 5,
-      start_time: "15:30",
-      end_time: "19:30",
-      num_columns: 3,
-    },
-  ];
+  // Insert schedule template weekdays
   const insertTemplateWeekday = db.prepare(
-    "INSERT INTO weekly_schedule_template_weekday (template_id, weekday_id, start_time, end_time, num_columns) VALUES (?, ?, ?, ?, ?)"
+    "INSERT INTO weekly_schedule_template_weekday (template_id, weekday_id, start_time, end_time, num_pods) VALUES (?, ?, ?, ?, ?)"
   );
   templateWeekdays.forEach((weekday) => {
     insertTemplateWeekday.run(
@@ -450,53 +297,11 @@ const populateTestData = (db) => {
       weekday.weekday_id,
       weekday.start_time,
       weekday.end_time,
-      weekday.num_columns
+      weekday.num_pods
     );
   });
 
-  // 9. Insert instructors
-  const instructors = [
-    {
-      id: 1,
-      center_id: center.id,
-      first_name: "John",
-      last_name: "Doe",
-      cell_color: "#FF0000",
-      is_active: 1,
-    },
-    {
-      id: 2,
-      center_id: center.id,
-      first_name: "Jane",
-      last_name: "Smith",
-      cell_color: "#00FF00",
-      is_active: 1,
-    },
-    {
-      id: 3,
-      center_id: center.id,
-      first_name: "Bob",
-      last_name: "Johnson",
-      cell_color: "#0000FF",
-      is_active: 1,
-    },
-    {
-      id: 4,
-      center_id: center.id,
-      first_name: "Alice",
-      last_name: "Brown",
-      cell_color: "#FFFF00",
-      is_active: 1,
-    },
-    {
-      id: 5,
-      center_id: center.id,
-      first_name: "Charlie",
-      last_name: "Wilson",
-      cell_color: "#FF00FF",
-      is_active: 1,
-    },
-  ];
+  // Insert instructors
   const insertInstructor = db.prepare(
     "INSERT INTO instructor (id, center_id, first_name, last_name, cell_color, is_active) VALUES (?, ?, ?, ?, ?, ?)"
   );
@@ -511,189 +316,7 @@ const populateTestData = (db) => {
     );
   });
 
-  // 10. Insert students
-  const students = [
-    {
-      id: 1,
-      center_id: center.id,
-      first_name: "Emma",
-      last_name: "Thompson",
-      grade_level_id: 5,
-      default_session_type_id: 1,
-      is_homework_help: 0,
-      is_active: 1,
-    },
-    {
-      id: 2,
-      center_id: center.id,
-      first_name: "Liam",
-      last_name: "Anderson",
-      grade_level_id: 6,
-      default_session_type_id: 1,
-      is_homework_help: 1,
-      is_active: 1,
-    },
-    {
-      id: 3,
-      center_id: center.id,
-      first_name: "Olivia",
-      last_name: "Martinez",
-      grade_level_id: 4,
-      default_session_type_id: 1,
-      is_homework_help: 0,
-      is_active: 1,
-    },
-    {
-      id: 4,
-      center_id: center.id,
-      first_name: "Noah",
-      last_name: "Taylor",
-      grade_level_id: 7,
-      default_session_type_id: 1,
-      is_homework_help: 1,
-      is_active: 1,
-    },
-    {
-      id: 5,
-      center_id: center.id,
-      first_name: "Ava",
-      last_name: "Thomas",
-      grade_level_id: 5,
-      default_session_type_id: 1,
-      is_homework_help: 0,
-      is_active: 1,
-    },
-    {
-      id: 6,
-      center_id: center.id,
-      first_name: "Ethan",
-      last_name: "Hernandez",
-      grade_level_id: 6,
-      default_session_type_id: 1,
-      is_homework_help: 1,
-      is_active: 1,
-    },
-    {
-      id: 7,
-      center_id: center.id,
-      first_name: "Sophia",
-      last_name: "Moore",
-      grade_level_id: 4,
-      default_session_type_id: 1,
-      is_homework_help: 0,
-      is_active: 1,
-    },
-    {
-      id: 8,
-      center_id: center.id,
-      first_name: "Mason",
-      last_name: "Martin",
-      grade_level_id: 7,
-      default_session_type_id: 1,
-      is_homework_help: 1,
-      is_active: 1,
-    },
-    {
-      id: 9,
-      center_id: center.id,
-      first_name: "Isabella",
-      last_name: "Jackson",
-      grade_level_id: 5,
-      default_session_type_id: 1,
-      is_homework_help: 0,
-      is_active: 1,
-    },
-    {
-      id: 10,
-      center_id: center.id,
-      first_name: "William",
-      last_name: "Thompson",
-      grade_level_id: 6,
-      default_session_type_id: 1,
-      is_homework_help: 1,
-      is_active: 1,
-    },
-    {
-      id: 11,
-      center_id: center.id,
-      first_name: "Mia",
-      last_name: "White",
-      grade_level_id: 4,
-      default_session_type_id: 1,
-      is_homework_help: 0,
-      is_active: 1,
-    },
-    {
-      id: 12,
-      center_id: center.id,
-      first_name: "James",
-      last_name: "Harris",
-      grade_level_id: 7,
-      default_session_type_id: 1,
-      is_homework_help: 1,
-      is_active: 1,
-    },
-    {
-      id: 13,
-      center_id: center.id,
-      first_name: "Charlotte",
-      last_name: "Clark",
-      grade_level_id: 5,
-      default_session_type_id: 1,
-      is_homework_help: 0,
-      is_active: 1,
-    },
-    {
-      id: 14,
-      center_id: center.id,
-      first_name: "Benjamin",
-      last_name: "Lewis",
-      grade_level_id: 6,
-      default_session_type_id: 1,
-      is_homework_help: 1,
-      is_active: 1,
-    },
-    {
-      id: 15,
-      center_id: center.id,
-      first_name: "Amelia",
-      last_name: "Robinson",
-      grade_level_id: 4,
-      default_session_type_id: 1,
-      is_homework_help: 0,
-      is_active: 1,
-    },
-    {
-      id: 16,
-      center_id: center.id,
-      first_name: "Lucas",
-      last_name: "Walker",
-      grade_level_id: 7,
-      default_session_type_id: 1,
-      is_homework_help: 1,
-      is_active: 1,
-    },
-    {
-      id: 17,
-      center_id: center.id,
-      first_name: "Harper",
-      last_name: "Young",
-      grade_level_id: 5,
-      default_session_type_id: 1,
-      is_homework_help: 0,
-      is_active: 1,
-    },
-    {
-      id: 18,
-      center_id: center.id,
-      first_name: "Henry",
-      last_name: "Allen",
-      grade_level_id: 6,
-      default_session_type_id: 1,
-      is_homework_help: 1,
-      is_active: 1,
-    },
-  ];
+  // Insert students
   const insertStudent = db.prepare(
     "INSERT INTO student (id, center_id, first_name, last_name, grade_level_id, default_session_type_id, is_homework_help, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
   );
@@ -710,27 +333,7 @@ const populateTestData = (db) => {
     );
   });
 
-  // 11. Insert weekly schedules
-  const weeklySchedules = [
-    {
-      id: 1,
-      center_id: center.id,
-      template_id: "spring-schedule",
-      added_by_user_id: adminUser.id,
-      date_created: "2025-02-15T10:00:00.000Z",
-      date_last_modified: "2025-02-15T10:00:00.000Z",
-      week_start_date: "2025-03-01",
-    },
-    {
-      id: 2,
-      center_id: center.id,
-      template_id: "spring-schedule",
-      added_by_user_id: adminUser.id,
-      date_created: "2025-02-15T10:00:00.000Z",
-      date_last_modified: "2025-02-15T10:00:00.000Z",
-      week_start_date: "2025-03-08",
-    },
-  ];
+  // Insert weekly schedules
   const insertWeeklySchedule = db.prepare(
     "INSERT INTO weekly_schedule (id, center_id, template_id, added_by_user_id, date_created, date_last_modified, week_start_date) VALUES (?, ?, ?, ?, ?, ?, ?)"
   );
@@ -746,219 +349,20 @@ const populateTestData = (db) => {
     );
   });
 
-  // 12. Insert daily schedules
-  const schedules = [
-    {
-      id: 1,
-      weekly_schedule_id: 1,
-      schedule_date: "2025-03-01",
-    },
-    {
-      id: 2,
-      weekly_schedule_id: 1,
-      schedule_date: "2025-03-02",
-    },
-    {
-      id: 3,
-      weekly_schedule_id: 1,
-      schedule_date: "2025-03-03",
-    },
-    {
-      id: 4,
-      weekly_schedule_id: 1,
-      schedule_date: "2025-03-04",
-    },
-    {
-      id: 5,
-      weekly_schedule_id: 1,
-      schedule_date: "2025-03-05",
-    },
-    {
-      id: 6,
-      weekly_schedule_id: 1,
-      schedule_date: "2025-03-06",
-    },
-    {
-      id: 7,
-      weekly_schedule_id: 1,
-      schedule_date: "2025-03-07",
-    },
-    {
-      id: 8,
-      weekly_schedule_id: 2,
-      schedule_date: "2025-03-08",
-    },
-    {
-      id: 9,
-      weekly_schedule_id: 2,
-      schedule_date: "2025-03-09",
-    },
-    {
-      id: 10,
-      weekly_schedule_id: 2,
-      schedule_date: "2025-03-10",
-    },
-    {
-      id: 11,
-      weekly_schedule_id: 2,
-      schedule_date: "2025-03-11",
-    },
-    {
-      id: 12,
-      weekly_schedule_id: 2,
-      schedule_date: "2025-03-12",
-    },
-    {
-      id: 13,
-      weekly_schedule_id: 2,
-      schedule_date: "2025-03-13",
-    },
-    {
-      id: 14,
-      weekly_schedule_id: 2,
-      schedule_date: "2025-03-14",
-    },
-  ];
+  // Insert daily schedules
   const insertSchedule = db.prepare(
-    "INSERT INTO schedule (id, weekly_schedule_id, schedule_date) VALUES (?, ?, ?)"
+    "INSERT INTO schedule (id, weekly_schedule_id, schedule_date, weekday_id) VALUES (?, ?, ?, ?)"
   );
   schedules.forEach((schedule) => {
     insertSchedule.run(
       schedule.id,
       schedule.weekly_schedule_id,
-      schedule.schedule_date
+      schedule.schedule_date,
+      schedule.weekday_id
     );
   });
 
-  // 13. Insert sessions
-  const sessions = [
-    {
-      id: 1,
-      center_id: center.id,
-      student_id: 1,
-      session_type_id: 1,
-      date: "2025-03-01T15:30:00.000Z",
-    },
-    {
-      id: 2,
-      center_id: center.id,
-      student_id: 2,
-      session_type_id: 1,
-      date: "2025-03-01T16:00:00.000Z",
-    },
-    {
-      id: 3,
-      center_id: center.id,
-      student_id: 3,
-      session_type_id: 1,
-      date: "2025-03-01T16:30:00.000Z",
-    },
-    {
-      id: 4,
-      center_id: center.id,
-      student_id: 4,
-      session_type_id: 1,
-      date: "2025-03-01T17:00:00.000Z",
-    },
-    {
-      id: 5,
-      center_id: center.id,
-      student_id: 5,
-      session_type_id: 1,
-      date: "2025-03-01T17:30:00.000Z",
-    },
-    {
-      id: 6,
-      center_id: center.id,
-      student_id: 6,
-      session_type_id: 1,
-      date: "2025-03-01T18:00:00.000Z",
-    },
-    {
-      id: 7,
-      center_id: center.id,
-      student_id: 7,
-      session_type_id: 1,
-      date: "2025-03-01T18:30:00.000Z",
-    },
-    {
-      id: 8,
-      center_id: center.id,
-      student_id: 8,
-      session_type_id: 1,
-      date: "2025-03-01T19:00:00.000Z",
-    },
-    {
-      id: 9,
-      center_id: center.id,
-      student_id: 9,
-      session_type_id: 1,
-      date: "2025-03-01T15:30:00.000Z",
-    },
-    {
-      id: 10,
-      center_id: center.id,
-      student_id: 10,
-      session_type_id: 1,
-      date: "2025-03-01T16:00:00.000Z",
-    },
-    {
-      id: 11,
-      center_id: center.id,
-      student_id: 11,
-      session_type_id: 1,
-      date: "2025-03-01T16:30:00.000Z",
-    },
-    {
-      id: 12,
-      center_id: center.id,
-      student_id: 12,
-      session_type_id: 1,
-      date: "2025-03-01T17:00:00.000Z",
-    },
-    {
-      id: 13,
-      center_id: center.id,
-      student_id: 13,
-      session_type_id: 1,
-      date: "2025-03-01T17:30:00.000Z",
-    },
-    {
-      id: 14,
-      center_id: center.id,
-      student_id: 14,
-      session_type_id: 1,
-      date: "2025-03-01T18:00:00.000Z",
-    },
-    {
-      id: 15,
-      center_id: center.id,
-      student_id: 15,
-      session_type_id: 1,
-      date: "2025-03-01T18:30:00.000Z",
-    },
-    {
-      id: 16,
-      center_id: center.id,
-      student_id: 16,
-      session_type_id: 1,
-      date: "2025-03-01T19:00:00.000Z",
-    },
-    {
-      id: 17,
-      center_id: center.id,
-      student_id: 17,
-      session_type_id: 1,
-      date: "2025-03-01T15:30:00.000Z",
-    },
-    {
-      id: 18,
-      center_id: center.id,
-      student_id: 18,
-      session_type_id: 1,
-      date: "2025-03-01T16:00:00.000Z",
-    },
-  ];
+  // Insert sessions
   const insertSession = db.prepare(
     "INSERT INTO session (id, center_id, student_id, session_type_id, date) VALUES (?, ?, ?, ?, ?)"
   );
@@ -972,11 +376,7 @@ const populateTestData = (db) => {
     );
   });
 
-  // 14. Insert schedule sessions
-  const scheduleSessions = sessions.map((session) => ({
-    schedule_id: 1, // Updated to use the new schedule ID
-    session_id: session.id,
-  }));
+  // Insert schedule sessions
   const insertScheduleSession = db.prepare(
     "INSERT INTO schedule_session (schedule_id, session_id) VALUES (?, ?)"
   );
@@ -984,6 +384,23 @@ const populateTestData = (db) => {
     insertScheduleSession.run(
       scheduleSession.schedule_id,
       scheduleSession.session_id
+    );
+  });
+
+  // Insert schedule cells
+  const insertScheduleCell = db.prepare(
+    "INSERT INTO schedule_cell (id, center_id, schedule_id, instructor_id, student_id, time_start, time_end, column_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  );
+  scheduleCells.forEach((cell) => {
+    insertScheduleCell.run(
+      cell.id,
+      cell.center_id,
+      cell.schedule_id,
+      cell.instructor_id,
+      cell.student_id,
+      cell.time_start,
+      cell.time_end,
+      cell.column_number
     );
   });
 };

@@ -25,7 +25,7 @@ export interface StudentTableRef {
   fetchStudents: () => Promise<void>;
 }
 
-const StudentTable = forwardRef<StudentTableRef, {}>((props, ref) => {
+const StudentTable = forwardRef<StudentTableRef, Record<string, never>>((props, ref) => {
   const [centerStudents, setCenterStudents] = useState<StudentWithDetails[]>(
     []
   );

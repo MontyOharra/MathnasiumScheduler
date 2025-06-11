@@ -58,11 +58,15 @@ interface ElectronAPI {
       centerId: number
     ) => Promise<DbQueryResult>;
     getScheduleWithDetails: (
-      scheduleId: string,
+      scheduleId: number,
+      centerId: number
+    ) => Promise<DbQueryResult>;
+    getScheduleCellsForSchedule: (
+      scheduleId: number,
       centerId: number
     ) => Promise<DbQueryResult>;
     getCellsForSchedule: (
-      scheduleId: string,
+      scheduleId: number,
       centerId: number
     ) => Promise<DbQueryResult>;
   };
