@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import InstructorTable from "./(components)/InstructorTable";
-import InstructorAddModal from "./(components)/InstructorAddModal";
+import InstructorTable from "@/app/dashboard/instructors/(components)/InstructorTable";
+import InstructorAddModal from "@/app/dashboard/instructors/(components)/InstructorAddModal";
 
 export default function InstructorsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);

@@ -15,7 +15,6 @@ interface ScheduleProps {
 }
 
 export function Schedule({
-  scheduleId,
   scheduleDate,
   weekdayId,
   numPods,

@@ -19,7 +19,7 @@ interface CellProps {
   columnNumber: number;
 }
 
-export function Cell({ cell, timeSlot, columnNumber }: CellProps) {
+export function Cell({ cell, timeSlot }: CellProps) {
   if (!cell) {
     return (
       <div
