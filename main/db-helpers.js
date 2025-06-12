@@ -72,7 +72,8 @@ const createTables = (db) => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       code TEXT NOT NULL,
       length INTEGER NOT NULL,
-      styling TEXT NOT NULL
+      styling TEXT NOT NULL,
+      session_alias TEXT NOT NULL
     )
   `);
 
@@ -181,8 +182,8 @@ const createTables = (db) => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       center_id INTEGER NOT NULL,
       schedule_id INTEGER NOT NULL,
-      instructor_id INTEGER NOT NULL,
-      student_id INTEGER NOT NULL,
+      instructor_id INTEGER,
+      student_id INTEGER,
       time_start DATETIME NOT NULL,
       time_end DATETIME NOT NULL,
       column_number INTEGER NOT NULL
@@ -243,14 +244,15 @@ const populateLookupTables = (db) => {
 
   if (sessionTypeCount.count === 0) {
     const insertSessionType = db.prepare(
-      "INSERT INTO session_type (id, code, length, styling) VALUES (?, ?, ?, ?)"
+      "INSERT INTO session_type (id, code, length, styling, session_alias) VALUES (?, ?, ?, ?, ?)"
     );
     for (const sessionType of sessionTypes) {
       insertSessionType.run(
         sessionType.id,
         sessionType.code,
         sessionType.length,
-        sessionType.styling
+        sessionType.styling,
+        sessionType.session_alias
       );
     }
   }

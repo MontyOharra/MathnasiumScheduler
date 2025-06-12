@@ -54,12 +54,13 @@ This document serves as a reference for the database schema used in the Mathnasi
 
 ### Table: `session_type`
 
-| Column    | Type    | Description                       |
-| --------- | ------- | --------------------------------- |
-| `id`      | INTEGER | Primary key, auto-increment       |
-| `code`    | TEXT    | Code identifying the session type |
-| `length`  | INTEGER | Length of the session             |
-| `styling` | TEXT    | CSS styling for the session type  |
+| Column          | Type    | Description                       |
+| --------------- | ------- | --------------------------------- |
+| `id`            | INTEGER | Primary key, auto-increment       |
+| `code`          | TEXT    | Code identifying the session type |
+| `length`        | INTEGER | Length of the session             |
+| `styling`       | TEXT    | CSS styling for the session type  |
+| `session_alias` | TEXT    | Display alias used for CSV import |
 
 ### Table: `instructor`
 
@@ -201,7 +202,8 @@ CREATE TABLE IF NOT EXISTS session_type (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   code TEXT NOT NULL,
   length INTEGER NOT NULL,
-  styling TEXT NOT NULL
+  styling TEXT NOT NULL,
+  session_alias TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS weekday (
