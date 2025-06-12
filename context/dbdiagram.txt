@@ -1,0 +1,150 @@
+// ─────────────────────────────
+//  Orgs & Access-Control Layer
+// ─────────────────────────────
+Table center {
+  id    int     [pk, increment]
+  name  varchar // human-readable (e.g. "Downtown Learning Center")
+}
+
+Table role {
+  id          int     [pk, increment]
+  code        varchar // 'master' | 'admin' | 'tutor' | 'viewer' …
+  description varchar
+}
+
+Table user {
+  id            int     [pk, increment]
+  center_id     int     [ref: > center.id]   // home center
+  role_id       int     [ref: > role.id]
+  email         varchar [unique]
+  first_name    varchar
+  last_name     varchar
+  invited_by_id int     [ref: - user.id]     // null for the first "master" user
+  is_active     boolean
+}
+
+// ─────────────────────────────
+//  Lookups (enums stay unchanged)
+// ─────────────────────────────
+Table grade_level {
+  id   int [pk, increment]
+  name varchar
+}
+
+Table session_type {
+  id   int [pk, increment]
+  code varchar
+  length int
+  styling string
+}
+
+Table weekday {
+  id   int [pk, increment]
+  name varchar
+}
+
+// ─────────────────────────────
+//  Core domain tables – now scoped by center
+// ─────────────────────────────
+Table instructor {
+  id          int  [pk, increment]
+  center_id   int  [ref: > center.id]
+  first_name  varchar
+  last_name   varchar
+  cell_color  varchar
+  is_active   boolean
+}
+
+Table instructor_grade_level {
+  instructor_id  int [ref: > instructor.id]
+  grade_level_id int [ref: > grade_level.id]
+}
+
+Table student {
+  id                int  [pk, increment]
+  center_id         int  [ref: > center.id]
+  first_name        varchar
+  last_name         varchar
+  grade_level_id    int  [ref: > grade_level.id]
+  is_homework_help  boolean
+  is_active         boolean
+}
+
+Table weekly_schedule_template {
+  id              varchar [pk]    // UUID
+  center_id       int     [ref: > center.id]
+  name            varchar
+  is_default      boolean
+  interval_length int               // minutes
+}
+
+Table weekly_schedule_template_weekday {
+  template_id varchar [ref: > weekly_schedule_template.id]
+  weekday_id  int     [ref: > weekday.id]
+  start_time  time
+  end_time    time
+  num_columns int
+}
+
+Table weekly_schedule {
+  id                 varchar [pk]
+  center_id          int     [ref: > center.id]
+  template_id        varchar [ref: > weekly_schedule_template.id]
+  added_by_user_id   int     [ref: > user.id]
+  date_created       datetime
+  date_last_modified datetime
+  week_start_date      date
+}
+
+Table schedule {
+  id int [pk]
+  weekly_schedule_id varchar [ref: > weekly_schedule.id]
+  schedule_date date
+  weekday_id int [ref: > weekday.id]
+}
+
+Table schedule_session {
+  schedule_id      int [ref: > schedule.id]
+  session_id       int [ref: > session.id]
+}
+
+Table session {
+  id               int  [pk, increment]
+  center_id        int  [ref: > center.id]
+  student_id       int  [ref: > student.id]
+  session_type_id  int  [ref: > session_type.id]
+  date             datetime
+  length_minutes   int
+}
+
+Table cell {
+  id             int  [pk, increment]
+  center_id      int  [ref: > center.id]
+  schedule_id    varchar [ref: > schedule.id]
+  instructor_id  int  [ref: > instructor.id]
+  student_id     int  [ref: > student.id]
+  time_start     datetime
+  time_end       datetime
+  column_number     int
+}
+
+// ─────────────────────────────
+//  Instructor Availability System
+// ─────────────────────────────
+Table instructor_default_availability {
+  id            int     [pk, increment]
+  instructor_id int     [ref: > instructor.id]
+  weekday_id    int     [ref: > weekday.id]
+  start_time    time    // e.g., "09:00"
+  end_time      time    // e.g., "17:00"
+  is_available  boolean // TRUE = available, FALSE = blocked out
+}
+
+Table instructor_specific_availability {
+  id            int     [pk, increment]
+  instructor_id int     [ref: > instructor.id]
+  specific_date date    // exact date override
+  start_time    time    // time slot start
+  end_time      time    // time slot end
+  is_available  boolean // TRUE = available despite default, FALSE = unavailable despite default
+}

@@ -30,16 +30,18 @@ This document serves as a reference for the database schema used in the Mathnasi
 | `first_name`    | TEXT    | User's first name                                     |
 | `last_name`     | TEXT    | User's last name                                      |
 | `invited_by_id` | INTEGER | Foreign key to user.id (null for first "master" user) |
-| `is_active`     | BOOLEAN | Whether the user is active                            |
+| `is_active`     | INTEGER | Whether the user is active (0 or 1)                   |
 
 ## Lookups (enums stay unchanged)
 
 ### Table: `grade_level`
 
-| Column | Type    | Description                 |
-| ------ | ------- | --------------------------- |
-| `id`   | INTEGER | Primary key, auto-increment |
-| `name` | TEXT    | Name of the grade level     |
+| Column     | Type    | Description                              |
+| ---------- | ------- | ---------------------------------------- |
+| `id`       | INTEGER | Primary key, auto-increment              |
+| `name`     | TEXT    | Name of the grade level                  |
+| `alias`    | TEXT    | Short alias for display (e.g., "K", "1") |
+| `is_basic` | INTEGER | Whether this is a basic level (0 or 1)   |
 
 ### Table: `weekday`
 
@@ -61,14 +63,14 @@ This document serves as a reference for the database schema used in the Mathnasi
 
 ### Table: `instructor`
 
-| Column       | Type    | Description                      |
-| ------------ | ------- | -------------------------------- |
-| `id`         | INTEGER | Primary key, auto-increment      |
-| `center_id`  | INTEGER | Foreign key to center.id         |
-| `first_name` | TEXT    | Instructor's first name          |
-| `last_name`  | TEXT    | Instructor's last name           |
-| `cell_color` | TEXT    | Color code for scheduler         |
-| `is_active`  | BOOLEAN | Whether the instructor is active |
+| Column       | Type    | Description                               |
+| ------------ | ------- | ----------------------------------------- |
+| `id`         | INTEGER | Primary key, auto-increment               |
+| `center_id`  | INTEGER | Foreign key to center.id                  |
+| `first_name` | TEXT    | Instructor's first name                   |
+| `last_name`  | TEXT    | Instructor's last name                    |
+| `cell_color` | TEXT    | Color code for scheduler                  |
+| `is_active`  | INTEGER | Whether the instructor is active (0 or 1) |
 
 ### Table: `instructor_grade_level`
 
@@ -79,86 +81,87 @@ This document serves as a reference for the database schema used in the Mathnasi
 
 ### Table: `student`
 
-| Column             | Type    | Description                            |
-| ------------------ | ------- | -------------------------------------- |
-| `id`               | INTEGER | Primary key, auto-increment            |
-| `center_id`        | INTEGER | Foreign key to center.id               |
-| `first_name`       | TEXT    | Student's first name                   |
-| `last_name`        | TEXT    | Student's last name                    |
-| `grade_level_id`   | INTEGER | Foreign key to grade_level.id          |
-| `is_homework_help` | BOOLEAN | Whether student requires homework help |
-| `is_active`        | BOOLEAN | Whether the student is active          |
+| Column                    | Type    | Description                                     |
+| ------------------------- | ------- | ----------------------------------------------- |
+| `id`                      | INTEGER | Primary key, auto-increment                     |
+| `center_id`               | INTEGER | Foreign key to center.id                        |
+| `first_name`              | TEXT    | Student's first name                            |
+| `last_name`               | TEXT    | Student's last name                             |
+| `grade_level_id`          | INTEGER | Foreign key to grade_level.id                   |
+| `default_session_type_id` | INTEGER | Foreign key to session_type.id                  |
+| `is_homework_help`        | INTEGER | Whether student requires homework help (0 or 1) |
+| `is_active`               | INTEGER | Whether the student is active (0 or 1)          |
 
 ### Table: `weekly_schedule_template`
 
-| Column            | Type    | Description                          |
-| ----------------- | ------- | ------------------------------------ |
-| `id`              | TEXT    | Primary key (UUID)                   |
-| `center_id`       | INTEGER | Foreign key to center.id             |
-| `name`            | TEXT    | Template name                        |
-| `is_default`      | BOOLEAN | Whether this is the default template |
-| `interval_length` | INTEGER | Interval length in minutes           |
+| Column            | Type    | Description                                   |
+| ----------------- | ------- | --------------------------------------------- |
+| `id`              | INTEGER | Primary key, auto-increment                   |
+| `center_id`       | INTEGER | Foreign key to center.id                      |
+| `name`            | TEXT    | Template name                                 |
+| `is_default`      | INTEGER | Whether this is the default template (0 or 1) |
+| `interval_length` | INTEGER | Interval length in minutes                    |
 
 ### Table: `weekly_schedule_template_weekday`
 
 | Column        | Type    | Description                                |
 | ------------- | ------- | ------------------------------------------ |
-| `template_id` | TEXT    | Foreign key to weekly_schedule_template.id |
+| `template_id` | INTEGER | Foreign key to weekly_schedule_template.id |
 | `weekday_id`  | INTEGER | Foreign key to weekday.id                  |
 | `start_time`  | TEXT    | Start time for this weekday                |
 | `end_time`    | TEXT    | End time for this weekday                  |
-| `num_columns` | INTEGER | Number of columns for this weekday         |
+| `num_pods`    | INTEGER | Number of pods for this weekday            |
 
 ### Table: `weekly_schedule`
 
-| Column               | Type    | Description                                |
-| -------------------- | ------- | ------------------------------------------ |
-| `id`                 | TEXT    | Primary key (UUID)                         |
-| `center_id`          | INTEGER | Foreign key to center.id                   |
-| `template_id`        | TEXT    | Foreign key to weekly_schedule_template.id |
-| `added_by_user_id`   | INTEGER | Foreign key to user.id                     |
-| `date_created`       | TEXT    | Creation datetime                          |
-| `date_last_modified` | TEXT    | Last modification datetime                 |
-| `week_start_date`    | TEXT    | Date of the schedule                       |
+| Column               | Type     | Description                                |
+| -------------------- | -------- | ------------------------------------------ |
+| `id`                 | INTEGER  | Primary key, auto-increment                |
+| `center_id`          | INTEGER  | Foreign key to center.id                   |
+| `template_id`        | INTEGER  | Foreign key to weekly_schedule_template.id |
+| `added_by_user_id`   | INTEGER  | Foreign key to user.id                     |
+| `date_created`       | DATETIME | Creation datetime                          |
+| `date_last_modified` | DATETIME | Last modification datetime                 |
+| `week_start_date`    | DATE     | Start date of the schedule week            |
 
 ### Table: `schedule`
 
-| Column               | Type     | Description                    |
-| -------------------- | -------- | ------------------------------ |
-| `id`                 | INTEGER  | Primary key, auto-increment    |
-| `weekly_schedule_id` | INTEGER  | Foreign key to center.id       |
-| `schedule_date`      | DATETIME | Foreign key to student.id      |
+| Column               | Type    | Description                       |
+| -------------------- | ------- | --------------------------------- |
+| `id`                 | INTEGER | Primary key, auto-increment       |
+| `weekly_schedule_id` | INTEGER | Foreign key to weekly_schedule.id |
+| `schedule_date`      | DATE    | Date of this daily schedule       |
+| `weekday_id`         | INTEGER | Foreign key to weekday.id         |
 
 ### Table: `schedule_session`
 
 | Column        | Type    | Description                |
 | ------------- | ------- | -------------------------- |
-| `schedule_id` | TEXT    | Foreign key to schedule.id |
+| `schedule_id` | INTEGER | Foreign key to schedule.id |
 | `session_id`  | INTEGER | Foreign key to session.id  |
 
 ### Table: `session`
 
-| Column            | Type    | Description                    |
-| ----------------- | ------- | ------------------------------ |
-| `id`              | INTEGER | Primary key, auto-increment    |
-| `center_id`       | INTEGER | Foreign key to center.id       |
-| `student_id`      | INTEGER | Foreign key to student.id      |
-| `session_type_id` | INTEGER | Foreign key to session_type.id |
-| `date`            | TEXT    | Datetime of the session        |
-| `length_minutes`  | INTEGER | Length of session in minutes   |
+| Column            | Type     | Description                    |
+| ----------------- | -------- | ------------------------------ |
+| `id`              | INTEGER  | Primary key, auto-increment    |
+| `center_id`       | INTEGER  | Foreign key to center.id       |
+| `student_id`      | INTEGER  | Foreign key to student.id      |
+| `session_type_id` | INTEGER  | Foreign key to session_type.id |
+| `date`            | DATETIME | Datetime of the session        |
 
-### Table: `cell`
+### Table: `schedule_cell`
 
-| Column          | Type    | Description                        |
-| --------------- | ------- | ---------------------------------- |
-| `id`            | INTEGER | Primary key, auto-increment        |
-| `center_id`     | INTEGER | Foreign key to center.id           |
-| `schedule_id`   | TEXT    | Foreign key to schedule.id         |
-| `instructor_id` | INTEGER | Foreign key to instructor.id       |
-| `student_id`    | INTEGER | Foreign key to student.id          |
-| `time_start`    | TEXT    | Start datetime                     |
-| `time_end`      | TEXT    | End datetime                       |
-| `column_number` | INTEGER | Column number in the schedule grid |
+| Column          | Type     | Description                        |
+| --------------- | -------- | ---------------------------------- |
+| `id`            | INTEGER  | Primary key, auto-increment        |
+| `center_id`     | INTEGER  | Foreign key to center.id           |
+| `schedule_id`   | INTEGER  | Foreign key to schedule.id         |
+| `instructor_id` | INTEGER  | Foreign key to instructor.id       |
+| `student_id`    | INTEGER  | Foreign key to student.id          |
+| `time_start`    | DATETIME | Start datetime                     |
+| `time_end`      | DATETIME | End datetime                       |
+| `column_number` | INTEGER  | Column number in the schedule grid |
 
 ## SQL Create Table Statements
 
@@ -183,16 +186,15 @@ CREATE TABLE IF NOT EXISTS user (
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   invited_by_id INTEGER,
-  is_active INTEGER NOT NULL,
-  FOREIGN KEY (center_id) REFERENCES center(id),
-  FOREIGN KEY (role_id) REFERENCES role(id),
-  FOREIGN KEY (invited_by_id) REFERENCES user(id)
+  is_active INTEGER NOT NULL
 );
 
 -- Lookups
 CREATE TABLE IF NOT EXISTS grade_level (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL
+  name TEXT NOT NULL,
+  alias TEXT NOT NULL,
+  is_basic INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS session_type (
@@ -214,16 +216,13 @@ CREATE TABLE IF NOT EXISTS instructor (
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   cell_color TEXT NOT NULL,
-  is_active INTEGER NOT NULL,
-  FOREIGN KEY (center_id) REFERENCES center(id)
+  is_active INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS instructor_grade_level (
   instructor_id INTEGER NOT NULL,
   grade_level_id INTEGER NOT NULL,
-  PRIMARY KEY (instructor_id, grade_level_id),
-  FOREIGN KEY (instructor_id) REFERENCES instructor(id),
-  FOREIGN KEY (grade_level_id) REFERENCES grade_level(id)
+  PRIMARY KEY (instructor_id, grade_level_id)
 );
 
 CREATE TABLE IF NOT EXISTS student (
@@ -232,51 +231,49 @@ CREATE TABLE IF NOT EXISTS student (
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   grade_level_id INTEGER NOT NULL,
+  default_session_type_id INTEGER NOT NULL,
   is_homework_help INTEGER NOT NULL,
-  is_active INTEGER NOT NULL,
-  FOREIGN KEY (center_id) REFERENCES center(id),
-  FOREIGN KEY (grade_level_id) REFERENCES grade_level(id)
+  is_active INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS weekly_schedule_template (
-  id TEXT PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   center_id INTEGER NOT NULL,
   name TEXT NOT NULL,
   is_default INTEGER NOT NULL,
-  interval_length INTEGER NOT NULL,
-  FOREIGN KEY (center_id) REFERENCES center(id)
+  interval_length INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS weekly_schedule_template_weekday (
-  template_id TEXT NOT NULL,
+  template_id INTEGER NOT NULL,
   weekday_id INTEGER NOT NULL,
   start_time TEXT NOT NULL,
   end_time TEXT NOT NULL,
-  num_columns INTEGER NOT NULL,
-  PRIMARY KEY (template_id, weekday_id),
-  FOREIGN KEY (template_id) REFERENCES weekly_schedule_template(id),
-  FOREIGN KEY (weekday_id) REFERENCES weekday(id)
+  num_pods INTEGER NOT NULL,
+  PRIMARY KEY (template_id, weekday_id)
+);
+
+CREATE TABLE IF NOT EXISTS weekly_schedule (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  center_id INTEGER NOT NULL,
+  template_id INTEGER NOT NULL,
+  added_by_user_id INTEGER NOT NULL,
+  date_created DATETIME NOT NULL,
+  date_last_modified DATETIME NOT NULL,
+  week_start_date DATE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS schedule (
-  id TEXT PRIMARY KEY,
-  center_id INTEGER NOT NULL,
-  template_id TEXT NOT NULL,
-  added_by_user_id INTEGER NOT NULL,
-  date_created TEXT NOT NULL,
-  date_last_modified TEXT NOT NULL,
-  schedule_date TEXT NOT NULL,
-  FOREIGN KEY (center_id) REFERENCES center(id),
-  FOREIGN KEY (template_id) REFERENCES weekly_schedule_template(id),
-  FOREIGN KEY (added_by_user_id) REFERENCES user(id)
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  weekly_schedule_id INTEGER NOT NULL,
+  schedule_date DATE NOT NULL,
+  weekday_id INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS schedule_session (
-  schedule_id TEXT NOT NULL,
+  schedule_id INTEGER NOT NULL,
   session_id INTEGER NOT NULL,
-  PRIMARY KEY (schedule_id, session_id),
-  FOREIGN KEY (schedule_id) REFERENCES schedule(id),
-  FOREIGN KEY (session_id) REFERENCES session(id)
+  PRIMARY KEY (schedule_id, session_id)
 );
 
 CREATE TABLE IF NOT EXISTS session (
@@ -284,25 +281,17 @@ CREATE TABLE IF NOT EXISTS session (
   center_id INTEGER NOT NULL,
   student_id INTEGER NOT NULL,
   session_type_id INTEGER NOT NULL,
-  date TEXT NOT NULL,
-  length_minutes INTEGER NOT NULL,
-  FOREIGN KEY (center_id) REFERENCES center(id),
-  FOREIGN KEY (student_id) REFERENCES student(id),
-  FOREIGN KEY (session_type_id) REFERENCES session_type(id)
+  date DATETIME NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS cell (
+CREATE TABLE IF NOT EXISTS schedule_cell (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   center_id INTEGER NOT NULL,
-  schedule_id TEXT NOT NULL,
+  schedule_id INTEGER NOT NULL,
   instructor_id INTEGER NOT NULL,
   student_id INTEGER NOT NULL,
-  time_start TEXT NOT NULL,
-  time_end TEXT NOT NULL,
-  column_number INTEGER NOT NULL,
-  FOREIGN KEY (center_id) REFERENCES center(id),
-  FOREIGN KEY (schedule_id) REFERENCES schedule(id),
-  FOREIGN KEY (instructor_id) REFERENCES instructor(id),
-  FOREIGN KEY (student_id) REFERENCES student(id)
+  time_start DATETIME NOT NULL,
+  time_end DATETIME NOT NULL,
+  column_number INTEGER NOT NULL
 );
 ```
