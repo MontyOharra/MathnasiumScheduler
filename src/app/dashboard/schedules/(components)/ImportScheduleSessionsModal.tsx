@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Upload, File } from "lucide-react";
+import { Upload } from "lucide-react";
 
 interface ImportScheduleSessionsModalProps {
   isOpen: boolean;

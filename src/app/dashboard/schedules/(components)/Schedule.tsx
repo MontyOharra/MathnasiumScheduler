@@ -261,33 +261,33 @@ export function Schedule({
 
       // Populate cells sequentially
       const columnsPerTime = numPods * 3;
+      const cellPromises: Promise<unknown>[] = [];
       for (const [time, studentIds] of Object.entries(occupancy)) {
-        studentIds.forEach(async (sId, idx) => {
+        studentIds.forEach((sId, idx) => {
           if (idx >= columnsPerTime) return; // ignore overflow
           const columnNumber = idx + 1;
           const endTime = addMinutes(time, intervalLength);
-          await dbService.insertScheduleCell({
-            centerId,
-            scheduleId: scheduleId ?? 0,
-            instructorId: null,
-            studentId: sId,
-            timeStart: time,
-            timeEnd: endTime,
-            columnNumber,
-          });
-          console.log(
-            "Inserted cell for student",
-            sId,
-            "at",
-            time,
-            "column",
-            columnNumber
+          cellPromises.push(
+            dbService.insertScheduleCell({
+              centerId,
+              scheduleId: scheduleId ?? 0,
+              instructorId: null,
+              studentId: sId,
+              timeStart: time,
+              timeEnd: endTime,
+              columnNumber,
+            })
           );
         });
       }
 
+      await Promise.all(cellPromises);
+
+      await loadCells();
+
       alert("Import complete!");
       console.log("Import finished successfully");
+      closeModal();
     } catch (err) {
       console.error("Import failed", err);
       alert("Failed to import sessions");

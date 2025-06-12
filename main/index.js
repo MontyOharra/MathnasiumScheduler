@@ -3,12 +3,14 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const isDev = require("electron-is-dev");
 const path = require("path");
 const { initDatabase, getDatabase, closeDatabase } = require("./db");
+const { spawn } = require("child_process");
 
 let mainWindow;
 let db = null;
 let retryCount = 0;
 const MAX_RETRIES = 5;
 const RETRY_DELAY = 2000; // 2 seconds
+let nextProcess = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -28,7 +30,35 @@ function createWindow() {
   if (isDev) {
     loadDevServer();
   } else {
-    mainWindow.loadURL(startUrl);
+    // Use the same electron executable but run it in Node mode so we don't rely on an external node.exe
+    const nodeBin = process.execPath; // Electron bundles its own Node binary
+    const nextCli = path.join(
+      __dirname,
+      "..",
+      "node_modules",
+      "next",
+      "dist",
+      "bin",
+      "next.cjs"
+    );
+
+    // Launch `next start -p 3000` in background (ELECTRON_RUN_AS_NODE tells electron to behave like pure node)
+    nextProcess = spawn(nodeBin, [nextCli, "start", "-p", "3000"], {
+      cwd: path.join(__dirname, ".."),
+      env: {
+        ...process.env,
+        NODE_ENV: "production",
+        ELECTRON_RUN_AS_NODE: "1",
+      },
+      stdio: "ignore",
+      detached: true,
+    });
+    // Give server a little time, then load
+    const prodUrl = "http://localhost:3000";
+    const tryLoad = () => {
+      mainWindow.loadURL(prodUrl).catch(() => setTimeout(tryLoad, 1000));
+    };
+    tryLoad();
   }
 
   if (isDev) {
@@ -83,6 +113,11 @@ app.on("window-all-closed", () => {
 app.on("will-quit", () => {
   // Close the database connection
   closeDatabase();
+  if (nextProcess) {
+    try {
+      process.kill(-nextProcess.pid);
+    } catch (_) {}
+  }
 });
 
 app.on("activate", () => {

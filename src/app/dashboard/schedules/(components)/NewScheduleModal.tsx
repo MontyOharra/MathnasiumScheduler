@@ -146,7 +146,9 @@ export default function NewScheduleModal({
             <div className="relative">
               <DatePicker
                 selected={selectedDate}
-                onChange={(date: Date) => setSelectedDate(date)}
+                onChange={(date: Date | null) => {
+                  if (date) setSelectedDate(date);
+                }}
                 minDate={new Date()}
                 dateFormat="MMMM d, yyyy"
                 className="w-full p-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-text pl-10"
@@ -170,7 +172,9 @@ export default function NewScheduleModal({
             <select
               value={selectedTemplate?.id || ""}
               onChange={(e) => {
-                const template = templates.find((t) => t.id === e.target.value);
+                const template = templates.find(
+                  (t) => t.id === Number(e.target.value)
+                );
                 setSelectedTemplate(template || null);
               }}
               className="w-full p-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-text"
