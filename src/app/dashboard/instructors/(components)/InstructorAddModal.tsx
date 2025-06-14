@@ -17,8 +17,15 @@ import {
   processGradeLevelsForInstructor,
   type GradeLevelWithBasic,
 } from "@/lib/grade-level-utils";
-import dbService from "@/lib/db-service";
-import InstructorAvailabilityModal from "./InstructorAvailabilityModal";
+import InstructorSimpleAvailabilityModal from "./InstructorSimpleAvailabilityModal";
+
+interface WeekdayAvailability {
+  weekdayId: number;
+  weekdayName: string;
+  isAvailable: boolean;
+  startTime: string | null;
+  endTime: string | null;
+}
 
 interface InstructorAddModalProps {
   isOpen: boolean;
@@ -49,9 +56,9 @@ export default function InstructorAddModal({
   const [showClassesSelection, setShowClassesSelection] = useState(false);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [tempInstructorId, setTempInstructorId] = useState<number | null>(null);
-  const [availabilityData, setAvailabilityData] = useState<Set<string>>(
-    new Set()
-  );
+  const [availabilityData, setAvailabilityData] = useState<
+    WeekdayAvailability[]
+  >([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,7 +77,7 @@ export default function InstructorAddModal({
       setNewInstructor(getEmptyInstructor());
       setShowClassesSelection(false);
       setTempInstructorId(null);
-      setAvailabilityData(new Set());
+      setAvailabilityData([]);
       fetchData();
     }
   }, [isOpen]);
@@ -363,9 +370,14 @@ export default function InstructorAddModal({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      {availabilityData.size > 0 ? (
+                      {availabilityData.length > 0 &&
+                      availabilityData.some((day) => day.isAvailable) ? (
                         <span className="text-green-600 text-sm">
-                          {availabilityData.size} time slots configured
+                          {
+                            availabilityData.filter((day) => day.isAvailable)
+                              .length
+                          }{" "}
+                          day(s) configured
                         </span>
                       ) : (
                         <span className="text-gray-500 text-sm">
@@ -421,7 +433,7 @@ export default function InstructorAddModal({
         </DialogContent>
       </Dialog>
 
-      <InstructorAvailabilityModal
+      <InstructorSimpleAvailabilityModal
         instructorId={tempInstructorId || -1}
         instructorName={
           newInstructor.firstName && newInstructor.lastName
@@ -434,9 +446,9 @@ export default function InstructorAddModal({
           console.log("Availability saved successfully for new instructor");
           setShowAvailabilityModal(false);
         }}
-        onAvailabilityChange={(selectedSlots) => {
-          setAvailabilityData(selectedSlots);
-          console.log("Availability data updated:", selectedSlots);
+        onAvailabilityChange={(availability: WeekdayAvailability[]) => {
+          setAvailabilityData(availability);
+          console.log("Availability data updated:", availability);
         }}
       />
     </>

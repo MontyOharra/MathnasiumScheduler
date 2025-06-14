@@ -224,21 +224,49 @@ contextBridge.exposeInMainWorld("electron", {
     },
 
     // All instructors with their grade levels
-    getInstructorsWithGradeLevels: (centerId) => {
-      return ipcRenderer.invoke(
-        "db-custom-query",
-        `SELECT i.*, 
-         GROUP_CONCAT(gl.name) as grade_level_names,
-         GROUP_CONCAT(gl.alias) as grade_level_aliases,
-         GROUP_CONCAT(igl.grade_level_id) as grade_level_ids
-         FROM instructor i
-         LEFT JOIN instructor_grade_level igl ON i.id = igl.instructor_id
-         LEFT JOIN grade_level gl ON igl.grade_level_id = gl.id
-         WHERE i.center_id = ? AND i.is_active = 1
-         GROUP BY i.id
-         ORDER BY i.last_name, i.first_name`,
-        [centerId]
-      );
+    getInstructorsWithGradeLevels: async (centerId, sort) => {
+      try {
+        console.log("Preload received instructor sort:", sort);
+        let query = `
+          SELECT i.*, 
+           GROUP_CONCAT(gl.name) as grade_level_names,
+           GROUP_CONCAT(gl.alias) as grade_level_aliases,
+           GROUP_CONCAT(igl.grade_level_id) as grade_level_ids
+           FROM instructor i
+           LEFT JOIN instructor_grade_level igl ON i.id = igl.instructor_id
+           LEFT JOIN grade_level gl ON igl.grade_level_id = gl.id
+           WHERE i.center_id = ? AND i.is_active = 1
+           GROUP BY i.id
+        `;
+
+        // Add sorting if specified
+        if (sort?.field) {
+          const sortField = {
+            firstName: "i.first_name",
+            lastName: "i.last_name",
+            cellColor: "i.cell_color",
+          }[sort.field];
+
+          if (sortField) {
+            const direction = sort.direction.toUpperCase();
+            console.log(`Sorting instructors by ${sortField} ${direction}`);
+            query += ` ORDER BY ${sortField} ${direction}`;
+          }
+        } else {
+          // Default sort by last name, first name if no sort specified
+          query += " ORDER BY i.last_name ASC, i.first_name ASC";
+        }
+
+        console.log("Final instructor query:", query);
+        const results = await ipcRenderer.invoke("db-custom-query", query, [
+          centerId,
+        ]);
+        console.log("Instructor query results:", results);
+        return results;
+      } catch (error) {
+        console.error("Error in getInstructorsWithGradeLevels:", error);
+        return { error: error.message };
+      }
     },
 
     // Get all grade levels with aliases

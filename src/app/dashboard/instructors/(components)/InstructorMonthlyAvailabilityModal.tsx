@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import dbService from "@/lib/db-service";
-import InstructorAvailabilityModal from "./InstructorAvailabilityModal";
+import InstructorSimpleAvailabilityModal from "./InstructorSimpleAvailabilityModal";
 
 interface InstructorMonthlyAvailabilityModalProps {
   instructorId: number;
@@ -23,6 +23,8 @@ interface DayAvailability {
   isAvailable: boolean;
   hasSpecialAvailability: boolean;
   isDefaultAvailable: boolean; // Based on weekday default
+  startTime: string | null;
+  endTime: string | null;
 }
 
 interface WeekdayAvailability {
@@ -50,89 +52,111 @@ export default function InstructorMonthlyAvailabilityModal({
   const [showDayEditModal, setShowDayEditModal] = useState(false);
   const [editingDate, setEditingDate] = useState<string | null>(null);
 
-  const weekdays = [
-    { id: 1, name: "Sunday" },
-    { id: 2, name: "Monday" },
-    { id: 3, name: "Tuesday" },
-    { id: 4, name: "Wednesday" },
-    { id: 5, name: "Thursday" },
-    { id: 6, name: "Friday" },
-    { id: 7, name: "Saturday" },
-  ];
+  const fetchAvailabilityData = async () => {
+    if (!isOpen || instructorId <= 0) return;
 
-  useEffect(() => {
-    const fetchAvailabilityData = async () => {
-      if (!isOpen || instructorId <= 0) return;
+    try {
+      setIsLoading(true);
 
-      try {
-        setIsLoading(true);
+      // Fetch default weekly availability
+      const defaultData = await dbService.getInstructorDefaultAvailability(
+        instructorId
+      );
+      setDefaultAvailability(defaultData);
 
-        // Fetch default weekly availability
-        const defaultData = await dbService.getInstructorDefaultAvailability(
-          instructorId
-        );
-        setDefaultAvailability(defaultData);
+      // Fetch special availability for the current month
+      const startOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        1
+      );
+      const endOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        0
+      );
 
-        // Fetch special availability for the current month
-        const startOfMonth = new Date(
+      // Create date strings in consistent format
+      const startDateStr = `${startOfMonth.getFullYear()}-${(
+        startOfMonth.getMonth() + 1
+      )
+        .toString()
+        .padStart(2, "0")}-${startOfMonth
+        .getDate()
+        .toString()
+        .padStart(2, "0")}`;
+      const endDateStr = `${endOfMonth.getFullYear()}-${(
+        endOfMonth.getMonth() + 1
+      )
+        .toString()
+        .padStart(2, "0")}-${endOfMonth.getDate().toString().padStart(2, "0")}`;
+
+      const specialData = await dbService.getInstructorSpecialAvailability(
+        instructorId,
+        startDateStr,
+        endDateStr
+      );
+
+      // Build day availability map
+      const dayMap = new Map<string, DayAvailability>();
+
+      // Generate all days in the month
+      for (let day = 1; day <= endOfMonth.getDate(); day++) {
+        const date = new Date(
           currentDate.getFullYear(),
           currentDate.getMonth(),
-          1
+          day
         );
-        const endOfMonth = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth() + 1,
-          0
+        // Create consistent date string format
+        const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
+        const weekdayId = date.getDay() + 1; // Convert to 1-7 format
+
+        // Check default availability for this weekday
+        const defaultForWeekday = defaultData.find(
+          (d) => d.weekdayId === weekdayId
         );
+        const isDefaultAvailable = defaultForWeekday?.isAvailable || false;
 
-        const specialData = await dbService.getInstructorSpecialAvailability(
-          instructorId,
-          startOfMonth.toISOString().split("T")[0],
-          endOfMonth.toISOString().split("T")[0]
-        );
+        // Check for special availability override
+        const specialForDate = specialData.find((s) => s.date === dateStr);
+        const hasSpecialAvailability = !!specialForDate;
 
-        // Build day availability map
-        const dayMap = new Map<string, DayAvailability>();
+        let isAvailable = isDefaultAvailable;
+        let startTime: string | null = null;
+        let endTime: string | null = null;
 
-        // Generate all days in the month
-        for (let day = 1; day <= endOfMonth.getDate(); day++) {
-          const date = new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
-            day
-          );
-          const dateStr = date.toISOString().split("T")[0];
-          const weekdayId = date.getDay() + 1; // Convert to 1-7 format
-
-          // Check default availability for this weekday
-          const defaultForWeekday = defaultData.find(
-            (d) => d.weekdayId === weekdayId
-          );
-          const isDefaultAvailable = defaultForWeekday?.isAvailable || false;
-
-          // Check for special availability override
-          const specialForDate = specialData.find((s) => s.date === dateStr);
-          const hasSpecialAvailability = !!specialForDate;
-          const isAvailable = hasSpecialAvailability
-            ? specialForDate.isAvailable
-            : isDefaultAvailable;
-
-          dayMap.set(dateStr, {
-            date: dateStr,
-            isAvailable,
-            hasSpecialAvailability,
-            isDefaultAvailable,
-          });
+        if (hasSpecialAvailability) {
+          // Use special availability data
+          isAvailable = specialForDate.isAvailable;
+          startTime = specialForDate.startTime;
+          endTime = specialForDate.endTime;
+        } else {
+          // Use default availability data
+          startTime = defaultForWeekday?.startTime || null;
+          endTime = defaultForWeekday?.endTime || null;
         }
 
-        setDayAvailabilities(dayMap);
-      } catch (error) {
-        console.error("Error fetching availability data:", error);
-      } finally {
-        setIsLoading(false);
+        dayMap.set(dateStr, {
+          date: dateStr,
+          isAvailable,
+          hasSpecialAvailability,
+          isDefaultAvailable,
+          startTime,
+          endTime,
+        });
       }
-    };
 
+      setDayAvailabilities(dayMap);
+    } catch (error) {
+      console.error("Error fetching availability data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchAvailabilityData();
   }, [isOpen, instructorId, currentDate]);
 
@@ -170,85 +194,29 @@ export default function InstructorMonthlyAvailabilityModal({
 
     try {
       for (const dateStr of selectedDates) {
-        await dbService.setInstructorSpecialAvailability(
-          instructorId,
-          dateStr,
-          {
-            isAvailable: false,
-            startTime: null,
-            endTime: null,
-          }
-        );
-      }
-
-      // Refresh data
-      const updatedMap = new Map(dayAvailabilities);
-      selectedDates.forEach((dateStr) => {
-        const existing = updatedMap.get(dateStr);
-        if (existing) {
-          updatedMap.set(dateStr, {
-            ...existing,
-            isAvailable: false,
-            hasSpecialAvailability: true,
-          });
-        }
-      });
-      setDayAvailabilities(updatedMap);
-      setSelectedDates(new Set());
-    } catch (error) {
-      console.error("Error updating availability:", error);
-    }
-  };
-
-  const handleMakeAvailable = async () => {
-    if (selectedDates.size === 0) return;
-
-    try {
-      for (const dateStr of selectedDates) {
-        const date = new Date(dateStr);
+        // Only set override if the day is typically available
+        const [year, month, day] = dateStr.split("-").map(Number);
+        const date = new Date(year, month - 1, day);
         const weekdayId = date.getDay() + 1;
         const defaultForWeekday = defaultAvailability.find(
           (d) => d.weekdayId === weekdayId
         );
 
         if (defaultForWeekday?.isAvailable) {
-          // Use default availability
           await dbService.setInstructorSpecialAvailability(
             instructorId,
             dateStr,
             {
-              isAvailable: true,
-              startTime: defaultForWeekday.startTime,
-              endTime: defaultForWeekday.endTime,
-            }
-          );
-        } else {
-          // Set basic availability (9 AM - 5 PM as default)
-          await dbService.setInstructorSpecialAvailability(
-            instructorId,
-            dateStr,
-            {
-              isAvailable: true,
-              startTime: "09:00",
-              endTime: "17:00",
+              isAvailable: false,
+              startTime: null,
+              endTime: null,
             }
           );
         }
       }
 
       // Refresh data
-      const updatedMap = new Map(dayAvailabilities);
-      selectedDates.forEach((dateStr) => {
-        const existing = updatedMap.get(dateStr);
-        if (existing) {
-          updatedMap.set(dateStr, {
-            ...existing,
-            isAvailable: true,
-            hasSpecialAvailability: true,
-          });
-        }
-      });
-      setDayAvailabilities(updatedMap);
+      await fetchAvailabilityData();
       setSelectedDates(new Set());
     } catch (error) {
       console.error("Error updating availability:", error);
@@ -267,18 +235,7 @@ export default function InstructorMonthlyAvailabilityModal({
       }
 
       // Refresh data - revert to default availability
-      const updatedMap = new Map(dayAvailabilities);
-      selectedDates.forEach((dateStr) => {
-        const existing = updatedMap.get(dateStr);
-        if (existing) {
-          updatedMap.set(dateStr, {
-            ...existing,
-            isAvailable: existing.isDefaultAvailable,
-            hasSpecialAvailability: false,
-          });
-        }
-      });
-      setDayAvailabilities(updatedMap);
+      await fetchAvailabilityData();
       setSelectedDates(new Set());
     } catch (error) {
       console.error("Error removing availability override:", error);
@@ -291,11 +248,6 @@ export default function InstructorMonthlyAvailabilityModal({
       currentDate.getMonth(),
       1
     );
-    const endOfMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() + 1,
-      0
-    );
     const startOfCalendar = new Date(startOfMonth);
     startOfCalendar.setDate(startOfCalendar.getDate() - startOfMonth.getDay());
 
@@ -305,29 +257,69 @@ export default function InstructorMonthlyAvailabilityModal({
     // Generate 6 weeks of calendar
     for (let week = 0; week < 6; week++) {
       for (let day = 0; day < 7; day++) {
-        const dateStr = currentCalendarDate.toISOString().split("T")[0];
+        // Create date string in local timezone to avoid timezone issues
+        const year = currentCalendarDate.getFullYear();
+        const month = (currentCalendarDate.getMonth() + 1)
+          .toString()
+          .padStart(2, "0");
+        const dayOfMonth = currentCalendarDate
+          .getDate()
+          .toString()
+          .padStart(2, "0");
+        const dateStr = `${year}-${month}-${dayOfMonth}`;
+
         const isCurrentMonth =
           currentCalendarDate.getMonth() === currentDate.getMonth();
         const dayAvailability = dayAvailabilities.get(dateStr);
         const isSelected = selectedDates.has(dateStr);
-        const isToday = dateStr === new Date().toISOString().split("T")[0];
 
         let dayClasses =
-          "h-12 border border-gray-200 cursor-pointer transition-colors flex items-center justify-center text-sm relative ";
+          "h-16 border border-gray-200 cursor-pointer transition-colors text-xs relative p-1 ";
 
         if (!isCurrentMonth) {
-          dayClasses += "text-gray-300 bg-gray-50 ";
+          dayClasses += "text-gray-400 bg-gray-100 border-gray-100 ";
         } else if (isSelected) {
           dayClasses += "bg-blue-500 text-white ";
         } else if (dayAvailability?.isAvailable) {
-          dayClasses += "bg-green-100 text-green-800 hover:bg-green-200 ";
+          dayClasses += "bg-white text-gray-900 hover:bg-gray-50 ";
         } else {
-          dayClasses += "bg-red-100 text-red-800 hover:bg-red-200 ";
+          dayClasses += "bg-gray-200 text-gray-500 ";
         }
 
-        if (isToday) {
-          dayClasses += "ring-2 ring-blue-400 ";
-        }
+        // Format availability times for display
+        const formatAvailabilityTimes = (dateStr: string) => {
+          const dayAvail = dayAvailabilities.get(dateStr);
+
+          if (dayAvail?.isAvailable && dayAvail.startTime && dayAvail.endTime) {
+            const formatTime = (time: string) => {
+              // Validate time format before processing
+              if (!time || !time.includes(":")) {
+                return "";
+              }
+              const [hours, minutes] = time.split(":").map(Number);
+              // Validate parsed values
+              if (isNaN(hours) || isNaN(minutes)) {
+                return "";
+              }
+              const period = hours >= 12 ? "PM" : "AM";
+              const displayHours =
+                hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+              return `${displayHours}:${minutes
+                .toString()
+                .padStart(2, "0")}${period}`;
+            };
+
+            const startTimeFormatted = formatTime(dayAvail.startTime);
+            const endTimeFormatted = formatTime(dayAvail.endTime);
+
+            // Only return formatted string if both times are valid
+            if (startTimeFormatted && endTimeFormatted) {
+              return `${startTimeFormatted}-${endTimeFormatted}`;
+            }
+          }
+
+          return "";
+        };
 
         days.push(
           <div
@@ -338,10 +330,27 @@ export default function InstructorMonthlyAvailabilityModal({
               isCurrentMonth && handleDateDoubleClick(dateStr)
             }
           >
-            <span>{currentCalendarDate.getDate()}</span>
+            {/* Date number in top-left */}
+            <span className="absolute top-1 left-1 font-medium">
+              {currentCalendarDate.getDate()}
+            </span>
+
+            {/* Special availability indicator */}
             {dayAvailability?.hasSpecialAvailability && (
               <div className="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full"></div>
             )}
+
+            {/* Availability times in center - only show if truly available with valid times */}
+            {isCurrentMonth &&
+              dayAvailability?.isAvailable &&
+              dayAvailability.startTime &&
+              dayAvailability.endTime && (
+                <div className="flex items-center justify-center h-full pt-3 text-center">
+                  <span className="text-xs leading-tight">
+                    {formatAvailabilityTimes(dateStr)}
+                  </span>
+                </div>
+              )}
           </div>
         );
 
@@ -373,15 +382,32 @@ export default function InstructorMonthlyAvailabilityModal({
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Monthly Availability - {instructorName}</DialogTitle>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p>
-                Green: Available, Red: Unavailable, Blue dot: Special override
-              </p>
+            <div className="text-sm text-gray-600">
               <p>Click to select days, double-click to edit specific day</p>
             </div>
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRemoveOverride}
+                disabled={selectedDates.size === 0}
+              >
+                Remove Override
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleMakeUnavailable}
+                disabled={selectedDates.size === 0}
+              >
+                Make Unavailable
+              </Button>
+            </div>
+
             {/* Month Navigation */}
             <div className="flex items-center justify-between">
               <Button variant="outline" size="sm" onClick={handlePreviousMonth}>
@@ -419,37 +445,6 @@ export default function InstructorMonthlyAvailabilityModal({
               {/* Calendar days */}
               <div className="grid grid-cols-7">{renderCalendar()}</div>
             </div>
-
-            {/* Action buttons */}
-            {selectedDates.size > 0 && (
-              <div className="flex gap-2 p-4 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-600 mr-4">
-                  {selectedDates.size} day{selectedDates.size !== 1 ? "s" : ""}{" "}
-                  selected
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleMakeAvailable}
-                >
-                  Make Available
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleMakeUnavailable}
-                >
-                  Make Unavailable
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleRemoveOverride}
-                >
-                  Remove Override
-                </Button>
-              </div>
-            )}
           </div>
 
           <DialogFooter>
@@ -462,7 +457,7 @@ export default function InstructorMonthlyAvailabilityModal({
 
       {/* Day-specific availability modal */}
       {showDayEditModal && editingDate && (
-        <InstructorAvailabilityModal
+        <InstructorSimpleAvailabilityModal
           instructorId={instructorId}
           instructorName={`${instructorName} - ${new Date(
             editingDate
@@ -472,51 +467,11 @@ export default function InstructorMonthlyAvailabilityModal({
             setShowDayEditModal(false);
             setEditingDate(null);
           }}
-          onSave={() => {
+          onSave={async () => {
             setShowDayEditModal(false);
             setEditingDate(null);
             // Refresh the monthly view by refetching data
-            const fetchData = async () => {
-              try {
-                const startOfMonth = new Date(
-                  currentDate.getFullYear(),
-                  currentDate.getMonth(),
-                  1
-                );
-                const endOfMonth = new Date(
-                  currentDate.getFullYear(),
-                  currentDate.getMonth() + 1,
-                  0
-                );
-
-                const specialData =
-                  await dbService.getInstructorSpecialAvailability(
-                    instructorId,
-                    startOfMonth.toISOString().split("T")[0],
-                    endOfMonth.toISOString().split("T")[0]
-                  );
-
-                // Update the day availability map
-                const updatedMap = new Map(dayAvailabilities);
-                const dayAvailability = updatedMap.get(editingDate);
-                if (dayAvailability) {
-                  const specialForDate = specialData.find(
-                    (s) => s.date === editingDate
-                  );
-                  if (specialForDate) {
-                    updatedMap.set(editingDate, {
-                      ...dayAvailability,
-                      isAvailable: specialForDate.isAvailable,
-                      hasSpecialAvailability: true,
-                    });
-                  }
-                }
-                setDayAvailabilities(updatedMap);
-              } catch (error) {
-                console.error("Error refreshing availability:", error);
-              }
-            };
-            fetchData();
+            await fetchAvailabilityData();
           }}
           specificDate={editingDate}
         />

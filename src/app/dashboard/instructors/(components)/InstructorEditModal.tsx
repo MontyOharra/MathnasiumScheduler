@@ -18,7 +18,7 @@ import {
   type GradeLevelWithBasic,
 } from "@/lib/grade-level-utils";
 import dbService from "@/lib/db-service";
-import InstructorAvailabilityModal from "./InstructorAvailabilityModal";
+import InstructorSimpleAvailabilityModal from "./InstructorSimpleAvailabilityModal";
 
 interface InstructorEditModalProps {
   instructorId: number;
@@ -540,7 +540,7 @@ export default function InstructorEditModal({
         </DialogContent>
       </Dialog>
 
-      <InstructorAvailabilityModal
+      <InstructorSimpleAvailabilityModal
         instructorId={instructorId}
         instructorName={
           instructor ? `${instructor.firstName} ${instructor.lastName}` : ""

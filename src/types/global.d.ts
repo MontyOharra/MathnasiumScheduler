@@ -57,7 +57,13 @@ interface ElectronAPI {
       instructorId: number,
       centerId: number
     ) => Promise<DbQueryResult>;
-    getInstructorsWithGradeLevels: (centerId: number) => Promise<DbQueryResult>;
+    getInstructorsWithGradeLevels: (
+      centerId: number,
+      sort?: {
+        field: "firstName" | "lastName" | "cellColor" | null;
+        direction: "asc" | "desc";
+      }
+    ) => Promise<DbQueryResult>;
     getScheduleWithDetails: (
       scheduleId: number,
       centerId: number

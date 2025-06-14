@@ -245,14 +245,23 @@ export class DatabaseService {
   }
 
   async getInstructorsWithGradeLevels(
-    centerId: number
+    centerId: number,
+    sort?: {
+      field: "firstName" | "lastName" | "cellColor" | null;
+      direction: "asc" | "desc";
+    }
   ): Promise<Array<Instructor & { gradeLevels: string[] }>> {
     this.checkElectron();
 
     try {
+      console.log("Sorting instructors with:", sort);
       // Try the dedicated method first
+      // @ts-ignore - The preload script accepts two parameters
       const results =
-        await window.electron.database.getInstructorsWithGradeLevels(centerId);
+        await window.electron.database.getInstructorsWithGradeLevels(
+          centerId,
+          sort
+        );
       this.handleError(results);
 
       return results.map((row: Record<string, unknown>) => {

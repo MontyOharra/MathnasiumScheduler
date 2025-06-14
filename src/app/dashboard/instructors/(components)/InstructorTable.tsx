@@ -23,7 +23,7 @@ export interface InstructorTableRef {
   fetchInstructors: () => Promise<void>;
 }
 
-interface InstructorTableProps {}
+type InstructorTableProps = Record<string, never>;
 
 const InstructorTable = forwardRef<InstructorTableRef, InstructorTableProps>(
   (props, ref) => {
@@ -57,7 +57,10 @@ const InstructorTable = forwardRef<InstructorTableRef, InstructorTableProps>(
 
         // Use the actual database service to fetch instructors with grade levels
         const dbService = DatabaseService.getInstance();
-        const instructors = await dbService.getInstructorsWithGradeLevels(1); // Using center ID 1 for now
+        const instructors = await dbService.getInstructorsWithGradeLevels(
+          1,
+          sort
+        ); // Using center ID 1 for now
         setCenterInstructors(instructors);
       } catch (error) {
         console.error("Error fetching instructors:", error);
@@ -80,7 +83,7 @@ const InstructorTable = forwardRef<InstructorTableRef, InstructorTableProps>(
       } finally {
         setIsLoading(false);
       }
-    }, []);
+    }, [sort]);
 
     useImperativeHandle(ref, () => ({
       fetchInstructors,
