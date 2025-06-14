@@ -53,6 +53,8 @@ export type Instructor = {
   centerId: number; // int → Center.id
   firstName: string; // varchar
   lastName: string; // varchar
+  email?: string; // varchar
+  phoneNumber?: string; // varchar
   cellColor: string; // varchar
   isActive: boolean; // boolean
 };

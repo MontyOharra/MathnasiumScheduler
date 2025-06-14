@@ -187,17 +187,61 @@ export class DatabaseService {
     );
   }
 
-  async getInstructorWithGradeLevels(
-    id: number,
-    centerId: number
-  ): Promise<number> {
+  async getInstructorById(id: number): Promise<Instructor | null> {
     this.checkElectron();
-    const result = await window.electron.database.getInstructorWithGradeLevels(
+    const results = await window.electron.database.customQuery(
+      "SELECT * FROM instructor WHERE id = ?",
+      [id]
+    );
+    this.handleError(results);
+    if (results.length === 0) return null;
+    return snakeToCamel<Instructor>(results[0]);
+  }
+
+  async getInstructorGradeLevelIds(instructorId: number): Promise<number[]> {
+    this.checkElectron();
+    const results = await window.electron.database.customQuery(
+      "SELECT grade_level_id FROM instructor_grade_level WHERE instructor_id = ?",
+      [instructorId]
+    );
+    this.handleError(results);
+    return results.map((row: any) => row.grade_level_id);
+  }
+
+  async updateInstructor(
+    id: number,
+    instructor: Partial<Instructor>
+  ): Promise<boolean> {
+    this.checkElectron();
+    const dbInstructor = camelToSnake(instructor);
+    const result = await window.electron.database.update(
+      "instructor",
       id,
-      centerId
+      dbInstructor
     );
     this.handleError(result);
-    return id;
+    return result.changes > 0;
+  }
+
+  async updateInstructorGradeLevels(
+    instructorId: number,
+    gradeLevelIds: number[]
+  ): Promise<void> {
+    this.checkElectron();
+
+    // First, delete existing grade level associations
+    await window.electron.database.customQuery(
+      "DELETE FROM instructor_grade_level WHERE instructor_id = ?",
+      [instructorId]
+    );
+
+    // Then, insert new grade level associations
+    for (const gradeLevelId of gradeLevelIds) {
+      await window.electron.database.customQuery(
+        "INSERT INTO instructor_grade_level (instructor_id, grade_level_id) VALUES (?, ?)",
+        [instructorId, gradeLevelId]
+      );
+    }
   }
 
   async getInstructorsWithGradeLevels(
@@ -230,7 +274,8 @@ export class DatabaseService {
     } catch (error) {
       // Fallback to custom query if the dedicated method doesn't exist
       console.warn(
-        "getInstructorsWithGradeLevels method not available, using fallback"
+        "getInstructorsWithGradeLevels method not available, using fallback",
+        error
       );
       const results = await window.electron.database.customQuery(
         `SELECT i.*, 

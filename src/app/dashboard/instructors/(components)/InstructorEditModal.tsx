@@ -10,6 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { ChevronRight, ChevronLeft } from "lucide-react";
+import {
+  getGradeLevels,
+  processGradeLevelsForInstructor,
+  type GradeLevelWithBasic,
+} from "@/lib/grade-level-utils";
 import dbService from "@/lib/db-service";
 
 interface InstructorEditModalProps {
@@ -19,23 +26,17 @@ interface InstructorEditModalProps {
   onSave: () => void;
 }
 
-interface GradeLevel {
+interface InstructorWithDetails {
   id: number;
-  name: string;
+  centerId: number;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phoneNumber?: string;
+  cellColor: string;
+  gradeLevelIds: number[];
+  isActive: boolean;
 }
-
-const POPULAR_COLORS = [
-  "#FF6B6B",
-  "#4ECDC4",
-  "#45B7D1",
-  "#FFA07A",
-  "#98D8C8",
-  "#A8E6CF",
-  "#F7DC6F",
-  "#BB8FCE",
-  "#85C1E9",
-  "#F8C471",
-];
 
 export default function InstructorEditModal({
   instructorId,
@@ -43,61 +44,50 @@ export default function InstructorEditModal({
   onClose,
   onSave,
 }: InstructorEditModalProps) {
+  const [isEditing, setIsEditing] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [instructor, setInstructor] = useState({
-    firstName: "",
-    lastName: "",
-    cellColor: "#FF6B6B",
-    email: "",
-    gradeLevelIds: [] as number[],
-    isActive: true,
-  });
+  const [showClassesSelection, setShowClassesSelection] = useState(false);
+  const [instructor, setInstructor] = useState<InstructorWithDetails | null>(
+    null
+  );
+  const [editedInstructor, setEditedInstructor] = useState<
+    Partial<InstructorWithDetails>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
-  const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([]);
+  const [gradeLevels, setGradeLevels] = useState<GradeLevelWithBasic[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
         const [levels] = await Promise.all([
-          dbService.getGradeLevels(),
+          getGradeLevels(),
           // TODO: Implement getInstructorById and getInstructorGradeLevels
         ]);
         setGradeLevels(levels);
 
-        // TODO: Load instructor data
-        // For now, using mock data based on instructorId
-        const mockInstructorData = {
-          1: {
-            firstName: "Sarah",
-            lastName: "Johnson",
-            cellColor: "#FF6B6B",
-            email: "sarah.johnson@mathnasium.com",
-            gradeLevelIds: [1, 2, 3], // K, 1st, 2nd
-            isActive: true,
-          },
-          2: {
-            firstName: "Mike",
-            lastName: "Chen",
-            cellColor: "#4ECDC4",
-            email: "mike.chen@mathnasium.com",
-            gradeLevelIds: [4, 5, 6], // 3rd, 4th, 5th
-            isActive: true,
-          },
-          3: {
-            firstName: "Emily",
-            lastName: "Davis",
-            cellColor: "#45B7D1",
-            email: "emily.davis@mathnasium.com",
-            gradeLevelIds: [7, 8, 9], // 6th, 7th, 8th
-            isActive: true,
-          },
-        };
+        // Load instructor data from database
 
-        const instructorData =
-          mockInstructorData[instructorId as keyof typeof mockInstructorData];
+        console.log("Loading instructor with ID:", instructorId);
+
+        // Fetch instructor data from database
+        const [instructorData, gradeLevelIds] = await Promise.all([
+          dbService.getInstructorById(instructorId),
+          dbService.getInstructorGradeLevelIds(instructorId),
+        ]);
+
+        console.log("Found instructor data:", instructorData);
+        console.log("Found grade level IDs:", gradeLevelIds);
+
         if (instructorData) {
-          setInstructor(instructorData);
+          const instructorWithGradeLevels = {
+            ...instructorData,
+            gradeLevelIds,
+          };
+          setInstructor(instructorWithGradeLevels);
+          setEditedInstructor(instructorWithGradeLevels);
+        } else {
+          console.warn("No instructor found with ID:", instructorId);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -106,22 +96,103 @@ export default function InstructorEditModal({
       }
     };
 
-    if (isOpen && instructorId) {
+    if (isOpen && instructorId > 0) {
+      console.log("fetchData called with instructorId:", instructorId);
       fetchData();
+      setShowClassesSelection(false);
+    } else {
+      console.log(
+        "fetchData NOT called - isOpen:",
+        isOpen,
+        "instructorId:",
+        instructorId
+      );
     }
   }, [isOpen, instructorId]);
 
-  const handleSave = () => {
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
     setShowConfirmDialog(true);
   };
 
   const handleConfirmSave = async () => {
     try {
-      // TODO: Implement updateInstructor in dbService
-      console.log("Would update instructor:", instructorId, instructor);
-      setShowConfirmDialog(false);
-      onSave();
-      onClose();
+      if (instructor) {
+        // Create updateData object with only changed fields
+        const updateData: Record<string, unknown> = {};
+
+        // Only include fields that have changed from the original instructor data
+        if (editedInstructor.firstName !== instructor.firstName) {
+          updateData.firstName = editedInstructor.firstName;
+        }
+        if (editedInstructor.lastName !== instructor.lastName) {
+          updateData.lastName = editedInstructor.lastName;
+        }
+        if (editedInstructor.cellColor !== instructor.cellColor) {
+          updateData.cellColor = editedInstructor.cellColor;
+        }
+        if (editedInstructor.email !== instructor.email) {
+          updateData.email = editedInstructor.email;
+        }
+        if (editedInstructor.phoneNumber !== instructor.phoneNumber) {
+          updateData.phoneNumber = editedInstructor.phoneNumber;
+        }
+        if (
+          JSON.stringify(editedInstructor.gradeLevelIds) !==
+          JSON.stringify(instructor.gradeLevelIds)
+        ) {
+          updateData.gradeLevelIds = editedInstructor.gradeLevelIds;
+        }
+        if (editedInstructor.isActive !== instructor.isActive) {
+          updateData.isActive = editedInstructor.isActive;
+        }
+
+        // Only proceed with update if there are actual changes
+        if (Object.keys(updateData).length > 0) {
+          console.log("updateData", updateData);
+
+          // Separate grade level updates from instructor updates
+          const gradeLevelIds = updateData.gradeLevelIds as
+            | number[]
+            | undefined;
+          delete updateData.gradeLevelIds;
+
+          // Update instructor data if there are any instructor field changes
+          if (Object.keys(updateData).length > 0) {
+            const success = await dbService.updateInstructor(
+              instructorId,
+              updateData
+            );
+            if (!success) {
+              console.error("Failed to update instructor data");
+              return;
+            }
+          }
+
+          // Update grade levels if they changed
+          if (gradeLevelIds !== undefined) {
+            await dbService.updateInstructorGradeLevels(
+              instructorId,
+              gradeLevelIds
+            );
+          }
+
+          setIsEditing(false);
+          setShowConfirmDialog(false);
+          setShowClassesSelection(false);
+          onSave();
+          onClose();
+        } else {
+          // No changes were made, just close the modal
+          setIsEditing(false);
+          setShowConfirmDialog(false);
+          setShowClassesSelection(false);
+          onClose();
+        }
+      }
     } catch (error) {
       console.error("Error updating instructor:", error);
     }
@@ -129,141 +200,110 @@ export default function InstructorEditModal({
 
   const handleCancel = () => {
     setShowConfirmDialog(false);
-    onClose();
+    setEditedInstructor(instructor || {});
+    setIsEditing(false);
+    setShowClassesSelection(false);
   };
 
   const handleGradeLevelChange = (gradeLevelId: number, checked: boolean) => {
+    const currentIds = editedInstructor.gradeLevelIds || [];
     if (checked) {
-      setInstructor({
-        ...instructor,
-        gradeLevelIds: [...instructor.gradeLevelIds, gradeLevelId],
+      setEditedInstructor({
+        ...editedInstructor,
+        gradeLevelIds: [...currentIds, gradeLevelId],
       });
     } else {
-      setInstructor({
-        ...instructor,
-        gradeLevelIds: instructor.gradeLevelIds.filter(
-          (id) => id !== gradeLevelId
-        ),
+      setEditedInstructor({
+        ...editedInstructor,
+        gradeLevelIds: currentIds.filter((id) => id !== gradeLevelId),
       });
     }
   };
 
-  if (isLoading) {
+  const handleClassesTaughtClick = () => {
+    if (isEditing) {
+      setShowClassesSelection(true);
+    }
+  };
+
+  const handleBackToMain = () => {
+    setShowClassesSelection(false);
+  };
+
+  if (!isOpen) {
     return null;
   }
+
+  if (isLoading || !instructor) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Instructor</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center items-center h-32">
+            <div className="text-gray-500">Loading instructor data...</div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  const processedGradeLevels = processGradeLevelsForInstructor(
+    editedInstructor.gradeLevelIds?.map(String) || [],
+    gradeLevels
+  );
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Instructor</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="firstName" className="text-right">
-                First Name
-              </Label>
-              <Input
-                id="firstName"
-                value={instructor.firstName}
-                onChange={(e) =>
-                  setInstructor({
-                    ...instructor,
-                    firstName: e.target.value,
-                  })
-                }
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="lastName" className="text-right">
-                Last Name
-              </Label>
-              <Input
-                id="lastName"
-                value={instructor.lastName}
-                onChange={(e) =>
-                  setInstructor({
-                    ...instructor,
-                    lastName: e.target.value,
-                  })
-                }
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={instructor.email}
-                onChange={(e) =>
-                  setInstructor({
-                    ...instructor,
-                    email: e.target.value,
-                  })
-                }
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label className="text-right mt-2">Assignment Color</Label>
-              <div className="col-span-3 space-y-3">
+            <DialogTitle>
+              {showClassesSelection ? (
                 <div className="flex items-center gap-2">
-                  <div
-                    className="w-8 h-8 rounded border-2 border-gray-300"
-                    style={{ backgroundColor: instructor.cellColor }}
-                  />
-                  <Input
-                    type="color"
-                    value={instructor.cellColor}
-                    onChange={(e) =>
-                      setInstructor({
-                        ...instructor,
-                        cellColor: e.target.value,
-                      })
-                    }
-                    className="w-20 h-8 p-1 border rounded"
-                  />
-                  <span className="text-sm text-gray-600">
-                    {instructor.cellColor}
-                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBackToMain}
+                    className="p-1 h-auto"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  Select Classes Taught
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-2">Popular colors:</p>
-                  <div className="grid grid-cols-5 gap-2">
-                    {POPULAR_COLORS.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        className="w-8 h-8 rounded border-2 border-gray-300 hover:border-gray-500 transition-colors"
-                        style={{ backgroundColor: color }}
-                        onClick={() =>
-                          setInstructor({
-                            ...instructor,
-                            cellColor: color,
-                          })
-                        }
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label className="text-right mt-2">Grade Levels Taught</Label>
-              <div className="col-span-3 space-y-2 max-h-32 overflow-y-auto">
+              ) : (
+                "Edit Instructor"
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          {showClassesSelection ? (
+            // Classes Selection View
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2 max-h-96 overflow-y-auto">
                 {gradeLevels.map((gradeLevel) => (
                   <div
                     key={gradeLevel.id}
-                    className="flex items-center space-x-2"
+                    className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                    onClick={() => {
+                      const isCurrentlyChecked =
+                        editedInstructor.gradeLevelIds?.includes(
+                          gradeLevel.id
+                        ) || false;
+                      handleGradeLevelChange(
+                        gradeLevel.id,
+                        !isCurrentlyChecked
+                      );
+                    }}
                   >
                     <Checkbox
                       id={`grade-${gradeLevel.id}`}
-                      checked={instructor.gradeLevelIds.includes(gradeLevel.id)}
+                      checked={
+                        editedInstructor.gradeLevelIds?.includes(
+                          gradeLevel.id
+                        ) || false
+                      }
                       onCheckedChange={(checked) =>
                         handleGradeLevelChange(
                           gradeLevel.id,
@@ -273,7 +313,7 @@ export default function InstructorEditModal({
                     />
                     <Label
                       htmlFor={`grade-${gradeLevel.id}`}
-                      className="text-sm font-normal"
+                      className="text-sm font-normal flex-1 cursor-pointer"
                     >
                       {gradeLevel.name}
                     </Label>
@@ -281,31 +321,179 @@ export default function InstructorEditModal({
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label className="text-right mt-2">Weekly Availability</Label>
-              <div className="col-span-3">
-                <p className="text-sm text-gray-500 italic">
-                  Availability configuration will be implemented in a future
-                  update
-                </p>
+          ) : (
+            // Main Edit View
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="firstName" className="text-right">
+                  First Name
+                </Label>
+                <Input
+                  id="firstName"
+                  value={editedInstructor.firstName || ""}
+                  onChange={(e) =>
+                    setEditedInstructor({
+                      ...editedInstructor,
+                      firstName: e.target.value,
+                    })
+                  }
+                  disabled={!isEditing}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="lastName" className="text-right">
+                  Last Name
+                </Label>
+                <Input
+                  id="lastName"
+                  value={editedInstructor.lastName || ""}
+                  onChange={(e) =>
+                    setEditedInstructor({
+                      ...editedInstructor,
+                      lastName: e.target.value,
+                    })
+                  }
+                  disabled={!isEditing}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={editedInstructor.email || ""}
+                  onChange={(e) =>
+                    setEditedInstructor({
+                      ...editedInstructor,
+                      email: e.target.value,
+                    })
+                  }
+                  disabled={!isEditing}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="phoneNumber" className="text-right">
+                  Phone Number
+                </Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  value={editedInstructor.phoneNumber || ""}
+                  onChange={(e) =>
+                    setEditedInstructor({
+                      ...editedInstructor,
+                      phoneNumber: e.target.value,
+                    })
+                  }
+                  disabled={!isEditing}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label className="text-right mt-2">Assignment Color</Label>
+                <div className="col-span-3 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-8 h-8 rounded border-2 border-gray-300"
+                      style={{ backgroundColor: editedInstructor.cellColor }}
+                    />
+                    <Input
+                      type="color"
+                      value={editedInstructor.cellColor || "#FF6B6B"}
+                      onChange={(e) =>
+                        setEditedInstructor({
+                          ...editedInstructor,
+                          cellColor: e.target.value,
+                        })
+                      }
+                      disabled={!isEditing}
+                      className="w-20 h-8 p-1 border rounded"
+                    />
+                    <span className="text-sm text-gray-600">
+                      {editedInstructor.cellColor}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Classes Taught</Label>
+                <div
+                  className={`col-span-3 p-3 border rounded-md ${
+                    isEditing ? "cursor-pointer hover:bg-gray-50" : ""
+                  }`}
+                  onClick={handleClassesTaughtClick}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap gap-1 flex-1">
+                      {processedGradeLevels.map(
+                        (level: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md"
+                          >
+                            {level}
+                          </span>
+                        )
+                      )}
+                      {processedGradeLevels.length === 0 && (
+                        <span className="text-gray-500 text-sm">
+                          No classes selected
+                        </span>
+                      )}
+                    </div>
+                    {isEditing && (
+                      <ChevronRight className="h-4 w-4 text-gray-400 ml-2 flex-shrink-0" />
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="active" className="text-right">
+                  Active
+                </Label>
+                <div className="col-span-3">
+                  <Switch
+                    id="active"
+                    checked={editedInstructor.isActive}
+                    onCheckedChange={(checked) =>
+                      setEditedInstructor({
+                        ...editedInstructor,
+                        isActive: checked,
+                      })
+                    }
+                    disabled={!isEditing}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={
-                !instructor.firstName ||
-                !instructor.lastName ||
-                !instructor.email
-              }
-            >
-              Save Changes
-            </Button>
+            {isEditing ? (
+              <>
+                <Button variant="outline" onClick={handleCancel}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={
+                    !editedInstructor.firstName ||
+                    !editedInstructor.lastName ||
+                    !editedInstructor.email
+                  }
+                >
+                  Save Changes
+                </Button>
+              </>
+            ) : (
+              <Button onClick={handleEdit}>Edit</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

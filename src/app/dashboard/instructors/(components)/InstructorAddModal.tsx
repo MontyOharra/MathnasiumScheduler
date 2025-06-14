@@ -23,19 +23,6 @@ interface GradeLevel {
   name: string;
 }
 
-const POPULAR_COLORS = [
-  "#FF6B6B",
-  "#4ECDC4",
-  "#45B7D1",
-  "#FFA07A",
-  "#98D8C8",
-  "#A8E6CF",
-  "#F7DC6F",
-  "#BB8FCE",
-  "#85C1E9",
-  "#F8C471",
-];
-
 export default function InstructorAddModal({
   isOpen,
   onClose,
@@ -200,25 +187,6 @@ export default function InstructorAddModal({
                   <span className="text-sm text-gray-600">
                     {newInstructor.cellColor}
                   </span>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-2">Popular colors:</p>
-                  <div className="grid grid-cols-5 gap-2">
-                    {POPULAR_COLORS.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        className="w-8 h-8 rounded border-2 border-gray-300 hover:border-gray-500 transition-colors"
-                        style={{ backgroundColor: color }}
-                        onClick={() =>
-                          setNewInstructor({
-                            ...newInstructor,
-                            cellColor: color,
-                          })
-                        }
-                      />
-                    ))}
-                  </div>
                 </div>
               </div>
             </div>

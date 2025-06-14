@@ -90,6 +90,8 @@ const createTables = (db) => {
       center_id INTEGER NOT NULL,
       first_name TEXT NOT NULL,
       last_name TEXT NOT NULL,
+      email TEXT,
+      phone_number TEXT,
       cell_color TEXT NOT NULL,
       is_active INTEGER NOT NULL
     )
@@ -181,8 +183,8 @@ const createTables = (db) => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       center_id INTEGER NOT NULL,
       schedule_id INTEGER NOT NULL,
-      instructor_id INTEGER NOT NULL,
-      student_id INTEGER NOT NULL,
+      instructor_id INTEGER,
+      student_id INTEGER,
       time_start DATETIME NOT NULL,
       time_end DATETIME NOT NULL,
       column_number INTEGER NOT NULL
@@ -310,7 +312,7 @@ const populateTestData = (db) => {
 
   // Insert instructors
   const insertInstructor = db.prepare(
-    "INSERT INTO instructor (id, center_id, first_name, last_name, cell_color, is_active) VALUES (?, ?, ?, ?, ?, ?)"
+    "INSERT INTO instructor (id, center_id, first_name, last_name, email, phone_number, cell_color, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
   );
   instructors.forEach((instructor) => {
     insertInstructor.run(
@@ -318,6 +320,8 @@ const populateTestData = (db) => {
       instructor.center_id,
       instructor.first_name,
       instructor.last_name,
+      instructor.email,
+      instructor.phone_number,
       instructor.cell_color,
       instructor.is_active
     );

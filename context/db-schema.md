@@ -63,14 +63,16 @@ This document serves as a reference for the database schema used in the Mathnasi
 
 ### Table: `instructor`
 
-| Column       | Type    | Description                               |
-| ------------ | ------- | ----------------------------------------- |
-| `id`         | INTEGER | Primary key, auto-increment               |
-| `center_id`  | INTEGER | Foreign key to center.id                  |
-| `first_name` | TEXT    | Instructor's first name                   |
-| `last_name`  | TEXT    | Instructor's last name                    |
-| `cell_color` | TEXT    | Color code for scheduler                  |
-| `is_active`  | INTEGER | Whether the instructor is active (0 or 1) |
+| Column         | Type    | Description                               |
+| -------------- | ------- | ----------------------------------------- |
+| `id`           | INTEGER | Primary key, auto-increment               |
+| `center_id`    | INTEGER | Foreign key to center.id                  |
+| `first_name`   | TEXT    | Instructor's first name                   |
+| `last_name`    | TEXT    | Instructor's last name                    |
+| `email`        | TEXT    | Instructor's email address                |
+| `phone_number` | TEXT    | Instructor's phone number                 |
+| `cell_color`   | TEXT    | Color code for scheduler                  |
+| `is_active`    | INTEGER | Whether the instructor is active (0 or 1) |
 
 ### Table: `instructor_grade_level`
 
@@ -215,6 +217,8 @@ CREATE TABLE IF NOT EXISTS instructor (
   center_id INTEGER NOT NULL,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
+  email TEXT,
+  phone_number TEXT,
   cell_color TEXT NOT NULL,
   is_active INTEGER NOT NULL
 );

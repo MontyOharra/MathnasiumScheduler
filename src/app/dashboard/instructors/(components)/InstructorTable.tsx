@@ -13,7 +13,7 @@ import InstructorTableHeader, {
   SortDirection,
 } from "./InstructorTableHeader";
 import { DatabaseService } from "@/lib/db-service";
-// import InstructorEditModal from "./InstructorEditModal";
+import InstructorEditModal from "./InstructorEditModal";
 
 interface InstructorWithDetails extends Instructor {
   gradeLevels: string[];
@@ -29,10 +29,10 @@ const InstructorTable = forwardRef<InstructorTableRef, Record<string, never>>(
       InstructorWithDetails[]
     >([]);
     const [isLoading, setIsLoading] = useState(true);
-    // const [selectedInstructorId, setSelectedInstructorId] = useState<
-    //   number | null
-    // >(null);
-    // const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedInstructorId, setSelectedInstructorId] = useState<
+      number | null
+    >(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [sort, setSort] = useState<{
       field: SortField | null;
       direction: SortDirection;
@@ -57,7 +57,6 @@ const InstructorTable = forwardRef<InstructorTableRef, Record<string, never>>(
         const dbService = DatabaseService.getInstance();
         const instructors = await dbService.getInstructorsWithGradeLevels(1); // Using center ID 1 for now
         setCenterInstructors(instructors);
-        console.log("Instructors:", instructors);
       } catch (error) {
         console.error("Error fetching instructors:", error);
         // Fallback to basic instructor fetch if the new method doesn't exist
@@ -89,6 +88,15 @@ const InstructorTable = forwardRef<InstructorTableRef, Record<string, never>>(
       fetchInstructors();
     }, [fetchInstructors]);
 
+    // Debug: Track modal state changes
+    useEffect(() => {
+      console.log("Modal state changed:", {
+        selectedInstructorId,
+        isEditModalOpen,
+        shouldRenderModal: selectedInstructorId && isEditModalOpen,
+      });
+    }, [selectedInstructorId, isEditModalOpen]);
+
     const handleSort = (field: SortField) => {
       console.log("Sort clicked:", field);
       setSort((currentSort) => {
@@ -105,24 +113,29 @@ const InstructorTable = forwardRef<InstructorTableRef, Record<string, never>>(
     };
 
     const handleEdit = (instructorId: number) => {
-      // setSelectedInstructorId(instructorId);
-      // setIsEditModalOpen(true);
-      console.log("Edit instructor:", instructorId);
-      // TODO: Re-enable modal when import is fixed
+      console.log("handleEdit called with instructorId:", instructorId);
+      setSelectedInstructorId(instructorId);
+      setIsEditModalOpen(true);
+      console.log(
+        "Modal state set - selectedInstructorId:",
+        instructorId,
+        "isEditModalOpen:",
+        true
+      );
     };
 
     const handleViewSchedule = (instructorId: number) => {
       console.log("View instructor schedule:", instructorId);
     };
 
-    // const handleEditModalClose = () => {
-    //   setIsEditModalOpen(false);
-    //   setSelectedInstructorId(null);
-    // };
+    const handleEditModalClose = () => {
+      setIsEditModalOpen(false);
+      setSelectedInstructorId(null);
+    };
 
-    // const handleEditModalSave = async () => {
-    //   await fetchInstructors();
-    // };
+    const handleEditModalSave = async () => {
+      await fetchInstructors();
+    };
 
     if (isLoading && centerInstructors.length === 0) {
       return (
@@ -156,8 +169,6 @@ const InstructorTable = forwardRef<InstructorTableRef, Record<string, never>>(
           </Table>
         </div>
 
-        {/* TODO: Uncomment when modal import is fixed */}
-        {/*
         {selectedInstructorId && (
           <InstructorEditModal
             instructorId={selectedInstructorId}
@@ -166,7 +177,6 @@ const InstructorTable = forwardRef<InstructorTableRef, Record<string, never>>(
             onSave={handleEditModalSave}
           />
         )}
-        */}
       </div>
     );
   }
