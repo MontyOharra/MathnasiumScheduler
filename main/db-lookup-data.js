@@ -34,8 +34,10 @@ const gradeLevels = [
   { name: "AP Calculus BC", alias: "Calc BC", is_basic: 0 },
 
   // Additional high school and college math subjects - Not basic
-  { name: "Statistics", alias: "Stat", is_basic: 0 },
-  { name: "AP Statistics", alias: "AP Stat", is_basic: 0 },
+  { name: "TSI Prep", alias: "TSI", is_basic: 0 },
+  { name: "College Algebra", alias: "C Alg", is_basic: 0 },
+  { name: "Statistics", alias: "Stats", is_basic: 0 },
+  { name: "AP Statistics", alias: "AP Stats", is_basic: 0 },
   { name: "Discrete Mathematics", alias: "Discrete", is_basic: 0 },
   { name: "Linear Algebra", alias: "Lin Alg", is_basic: 0 },
   { name: "Differential Equations", alias: "Diff Eq", is_basic: 0 },
@@ -64,30 +66,35 @@ const sessionTypes = [
     code: "REGULAR",
     length: 60,
     styling: "default",
+    session_alias: "1-hour session - 60m",
   },
   {
     id: 2,
     code: "HOMEWORK HELP",
     length: 60,
     styling: "homework-help",
+    session_alias: "HW Help - 60m",
   },
   {
     id: 3,
     code: "INITIAL ASSESSMENT",
     length: 90,
     styling: "initial-assessment",
+    session_alias: "1-hour session - 90m",
   },
   {
     id: 4,
     code: "CHECKUP",
     length: 60,
     styling: "checkup",
+    session_alias: "Checkup - 60m",
   },
   {
     id: 5,
     code: "ONE-ON-ONE",
     length: 90,
     styling: "one-on-one",
+    session_alias: "One-on-One - 90m",
   },
 ];
 

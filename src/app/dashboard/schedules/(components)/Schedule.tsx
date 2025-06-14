@@ -3,6 +3,9 @@ import { format } from "date-fns";
 import { Printer, Download } from "lucide-react";
 import dbService from "@/lib/db-service";
 import { ScheduleCell } from "./ScheduleCell";
+import { FixedSizeGrid as Grid } from "react-window";
+import type { GridChildComponentProps } from "react-window";
+import ImportScheduleSessionsModal from "./ImportScheduleSessionsModal";
 
 interface ScheduleProps {
   scheduleId: number;
@@ -14,7 +17,13 @@ interface ScheduleProps {
   intervalLength: number;
 }
 
+type CellDict = Record<
+  string,
+  { studentName: string; instructorId: number | null }
+>;
+
 export function Schedule({
+  scheduleId,
   scheduleDate,
   weekdayId,
   numPods,
@@ -24,6 +33,37 @@ export function Schedule({
 }: ScheduleProps) {
   const [weekdayName, setWeekdayName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [cellDict, setCellDict] = useState<CellDict>({});
+
+  const loadCells = async () => {
+    if (!scheduleId) return;
+    try {
+      // TODO replace with center context
+      const centerId = 1;
+      const cells = await dbService.getScheduleCellsForSchedule(
+        scheduleId,
+        centerId
+      );
+      const dict: CellDict = {};
+      cells.forEach((c) => {
+        const key = `${c.timeStart}-${c.columnNumber}`;
+        const studentName =
+          c.studentFirstName && c.studentLastName
+            ? `${c.studentFirstName} ${c.studentLastName}`
+            : "";
+        dict[key] = { studentName, instructorId: c.instructorId ?? null };
+      });
+      setCellDict(dict);
+    } catch (err) {
+      console.error("Failed to load schedule cells", err);
+    }
+  };
+
+  useEffect(() => {
+    loadCells();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleId]);
 
   useEffect(() => {
     const fetchWeekdayName = async () => {
@@ -81,6 +121,179 @@ export function Schedule({
     return slots;
   };
 
+  const handleImportClick = () => setShowImportModal(true);
+
+  const closeModal = () => setShowImportModal(false);
+
+  /** Robust CSV/TSV parser handling quoted values */
+  const parseCsv = (
+    text: string
+  ): Array<{
+    appointmentDate: string;
+    studentName: string;
+    sessionType: string;
+  }> => {
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length === 0) return [];
+
+    const delimiter = lines[0].includes("\t") ? "\t" : ",";
+
+    const rows: Array<{
+      appointmentDate: string;
+      studentName: string;
+      sessionType: string;
+    }> = [];
+
+    const splitLine = (line: string): string[] => {
+      if (delimiter === "\t") {
+        return line.split("\t");
+      }
+      // For commas – split on commas that are not inside double quotes
+      const regex = /,(?=(?:[^"]*"[^"]*")*[^"]*$)/g;
+      const parts = line.split(regex);
+      return parts.map((part) => part.replace(/^"|"$/g, "")); // strip outer quotes
+    };
+
+    // Skip header (assumed)
+    for (let i = 1; i < lines.length; i++) {
+      const cols = splitLine(lines[i]).map((c) => c.trim());
+      if (cols.length < 3) continue;
+      rows.push({
+        appointmentDate: cols[0],
+        studentName: cols[1],
+        sessionType: cols[2],
+      });
+    }
+    return rows;
+  };
+
+  const importCsvFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      console.log("Parsed", rows.length, "rows from CSV");
+
+      // Fetch necessary lookup maps
+      const sessionTypes = await dbService.getSessionTypes();
+      console.log("Loaded", sessionTypes.length, "session types");
+      const sessionTypeMap = new Map<string, { id: number; length: number }>();
+      sessionTypes.forEach((st) =>
+        sessionTypeMap.set(st.sessionAlias.toUpperCase(), {
+          id: st.id,
+          length: st.length,
+        })
+      );
+
+      // TODO replace with real center context
+      const centerId = 1;
+      const students = await dbService.getActiveStudents(centerId);
+      console.log("Loaded", students.length, "students for center", centerId);
+      const studentMap = new Map<string, number>();
+      students.forEach((s) =>
+        studentMap.set(
+          `${s.firstName.toUpperCase()} ${s.lastName.toUpperCase()}`,
+          s.id
+        )
+      );
+
+      // Build occupancy dictionary { time: studentIds[] }
+      const occupancy: Record<string, number[]> = {};
+
+      const scheduleDateStr = format(scheduleDate, "yyyy-MM-dd");
+
+      for (const row of rows) {
+        console.log("Processing row", row);
+        const dateObj = new Date(row.appointmentDate);
+        const dateStr = format(dateObj, "yyyy-MM-dd");
+        if (dateStr !== scheduleDateStr) {
+          console.log(
+            "Skipping row due to date mismatch",
+            dateStr,
+            "!=",
+            scheduleDateStr
+          );
+          continue; // only this schedule
+        }
+
+        const timeStr = format(dateObj, "HH:mm");
+        const studentId = studentMap.get(row.studentName.toUpperCase());
+        const stInfo = sessionTypeMap.get(row.sessionType.toUpperCase());
+        if (!studentId) {
+          console.warn("Student not found for", row.studentName);
+        }
+        if (!stInfo) {
+          console.warn("Session type alias not found for", row.sessionType);
+        }
+        if (!studentId || !stInfo) continue; // skip unknowns
+
+        console.log(
+          "Inserting session for studentId",
+          studentId,
+          "time",
+          timeStr
+        );
+        // Insert session into DB
+        await dbService.insertSession({
+          centerId,
+          studentId,
+          sessionTypeId: stInfo.id,
+          date: dateObj.toISOString(),
+        });
+
+        if (!occupancy[timeStr]) occupancy[timeStr] = [];
+        occupancy[timeStr].push(studentId);
+
+        // If session longer than interval, add second slot (supports 60 vs 30)
+        if (stInfo.length > intervalLength) {
+          const [h, m] = timeStr.split(":").map(Number);
+          const startMinutes = h * 60 + m + intervalLength;
+          const h2 = Math.floor(startMinutes / 60)
+            .toString()
+            .padStart(2, "0");
+          const m2 = (startMinutes % 60).toString().padStart(2, "0");
+          const nextSlot = `${h2}:${m2}`;
+          if (!occupancy[nextSlot]) occupancy[nextSlot] = [];
+          occupancy[nextSlot].push(studentId);
+        }
+      }
+
+      console.log("Occupancy dictionary", occupancy);
+
+      // Populate cells sequentially
+      const columnsPerTime = numPods * 3;
+      const cellPromises: Promise<unknown>[] = [];
+      for (const [time, studentIds] of Object.entries(occupancy)) {
+        studentIds.forEach((sId, idx) => {
+          if (idx >= columnsPerTime) return; // ignore overflow
+          const columnNumber = idx + 1;
+          const endTime = addMinutes(time, intervalLength);
+          cellPromises.push(
+            dbService.insertScheduleCell({
+              centerId,
+              scheduleId: scheduleId ?? 0,
+              instructorId: null,
+              studentId: sId,
+              timeStart: time,
+              timeEnd: endTime,
+              columnNumber,
+            })
+          );
+        });
+      }
+
+      await Promise.all(cellPromises);
+
+      await loadCells();
+
+      alert("Import complete!");
+      console.log("Import finished successfully");
+      closeModal();
+    } catch (err) {
+      console.error("Import failed", err);
+      alert("Failed to import sessions");
+    }
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -99,7 +312,10 @@ export function Schedule({
             <Printer size={16} />
             Print
           </button>
-          <button className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm">
+          <button
+            onClick={handleImportClick}
+            className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+          >
             <Download size={16} />
             Import Sessions
           </button>
@@ -162,16 +378,26 @@ export function Schedule({
                     key={`pod-${podIndex}-${timeSlot.start}`}
                     className="flex border-r-2 border-r-gray-500"
                   >
-                    {Array.from({ length: 3 }, (_, studentIndex) => (
-                      <ScheduleCell
-                        key={`${timeSlot.start}-${podIndex}-${studentIndex}`}
-                        timeStart={timeSlot.start}
-                        timeEnd={timeSlot.end}
-                        columnNumber={podIndex * 3 + studentIndex + 1}
-                        podNumber={podIndex + 1}
-                        studentSlot={studentIndex + 1}
-                      />
-                    ))}
+                    {Array.from({ length: 3 }, (_, studentIndex) => {
+                      const columnNumber = podIndex * 3 + studentIndex + 1;
+                      const lookupKey = `${timeSlot.start}-${columnNumber}`;
+                      const lookup = cellDict[lookupKey];
+                      const studentNames =
+                        lookup && lookup.studentName
+                          ? [lookup.studentName]
+                          : [];
+                      return (
+                        <ScheduleCell
+                          key={`${timeSlot.start}-${podIndex}-${studentIndex}`}
+                          timeStart={timeSlot.start}
+                          timeEnd={timeSlot.end}
+                          columnNumber={columnNumber}
+                          podNumber={podIndex + 1}
+                          studentSlot={studentIndex + 1}
+                          studentNames={studentNames}
+                        />
+                      );
+                    })}
                   </div>
                 ))}
               </div>
@@ -179,6 +405,15 @@ export function Schedule({
           </div>
         </div>
       </div>
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <ImportScheduleSessionsModal
+          isOpen={showImportModal}
+          onClose={closeModal}
+          onImport={importCsvFile}
+        />
+      )}
     </div>
   );
 }

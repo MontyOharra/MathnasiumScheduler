@@ -419,7 +419,7 @@ export class DatabaseService {
   }
 
   async getSessionTypes(): Promise<
-    { id: number; code: string; length: number }[]
+    { id: number; code: string; length: number; sessionAlias: string }[]
   > {
     this.checkElectron();
     const results = await window.electron.database.getAll("session_type");
@@ -428,6 +428,7 @@ export class DatabaseService {
       id: sessionType.id as number,
       code: sessionType.code as string,
       length: sessionType.length as number,
+      sessionAlias: sessionType.session_alias as string,
     }));
   }
 
@@ -644,6 +645,46 @@ export class DatabaseService {
     return results.map((item: Record<string, unknown>) =>
       snakeToCamel<T>(item)
     );
+  }
+
+  async insertSession(data: {
+    centerId: number;
+    studentId: number;
+    sessionTypeId: number;
+    date: string; // ISO string
+  }): Promise<number> {
+    this.checkElectron();
+    const result = await window.electron.database.insert("session", {
+      center_id: data.centerId,
+      student_id: data.studentId,
+      session_type_id: data.sessionTypeId,
+      date: data.date,
+    });
+    this.handleError(result);
+    return result.id as number;
+  }
+
+  async insertScheduleCell(data: {
+    centerId: number;
+    scheduleId: number;
+    instructorId: number | null;
+    studentId: number;
+    timeStart: string; // "HH:mm"
+    timeEnd: string; // "HH:mm"
+    columnNumber: number;
+  }): Promise<number> {
+    this.checkElectron();
+    const result = await window.electron.database.insert("schedule_cell", {
+      center_id: data.centerId,
+      schedule_id: data.scheduleId,
+      instructor_id: data.instructorId,
+      student_id: data.studentId,
+      time_start: data.timeStart,
+      time_end: data.timeEnd,
+      column_number: data.columnNumber,
+    });
+    this.handleError(result);
+    return result.id as number;
   }
 }
 

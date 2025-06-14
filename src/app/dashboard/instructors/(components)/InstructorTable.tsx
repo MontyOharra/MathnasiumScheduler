@@ -23,7 +23,9 @@ export interface InstructorTableRef {
   fetchInstructors: () => Promise<void>;
 }
 
-const InstructorTable = forwardRef<InstructorTableRef, Record<string, never>>(
+interface InstructorTableProps {}
+
+const InstructorTable = forwardRef<InstructorTableRef, InstructorTableProps>(
   (props, ref) => {
     const [centerInstructors, setCenterInstructors] = useState<
       InstructorWithDetails[]
