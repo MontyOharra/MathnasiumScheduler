@@ -1,6 +1,13 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { Calendar, Edit } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   getGradeLevels,
   processGradeLevelsForInstructor,
@@ -19,11 +26,11 @@ interface InstructorTableRowProps {
 }
 
 const columnClasses = {
-  firstName: "w-[20%]",
-  lastName: "w-[20%]",
-  color: "w-[15%]",
-  gradeLevels: "w-[25%]",
-  actions: "w-[20%]",
+  firstName: "w-[20%] min-w-[100px]",
+  lastName: "w-[20%] min-w-[100px]",
+  color: "w-[15%] min-w-[120px]",
+  gradeLevels: "w-[30%] min-w-[150px]",
+  actions: "w-[15%] min-w-[100px]",
 };
 
 export default function InstructorTableRow({
@@ -92,16 +99,30 @@ export default function InstructorTableRow({
         </TableCell>
         <TableCell className={`${columnClasses.actions} text-right`}>
           <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowMonthlyAvailability(true)}
-            >
-              View Availability
-            </Button>
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              Edit
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowMonthlyAvailability(true)}
+                >
+                  <Calendar className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View availability</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={onEdit}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Edit</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </TableCell>
       </TableRow>

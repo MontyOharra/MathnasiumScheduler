@@ -318,15 +318,15 @@ export default function InstructorMonthlyAvailabilityModal({
         if (!isCurrentMonth) {
           dayClasses += "text-gray-300 bg-gray-50 ";
         } else if (isSelected) {
-          dayClasses += "bg-blue-500 text-white ";
+          dayClasses += "bg-red-500 text-white ";
         } else if (dayAvailability?.isAvailable) {
-          dayClasses += "bg-green-100 text-green-800 hover:bg-green-200 ";
-        } else {
           dayClasses += "bg-red-100 text-red-800 hover:bg-red-200 ";
+        } else {
+          dayClasses += "bg-gray-100 text-gray-600 hover:bg-gray-200 ";
         }
 
         if (isToday) {
-          dayClasses += "ring-2 ring-blue-400 ";
+          dayClasses += "ring-2 ring-red-400 ";
         }
 
         days.push(
@@ -340,7 +340,7 @@ export default function InstructorMonthlyAvailabilityModal({
           >
             <span>{currentCalendarDate.getDate()}</span>
             {dayAvailability?.hasSpecialAvailability && (
-              <div className="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full"></div>
+              <div className="absolute top-1 right-1 w-2 h-2 bg-red-600 rounded-full"></div>
             )}
           </div>
         );
@@ -375,7 +375,7 @@ export default function InstructorMonthlyAvailabilityModal({
             <DialogTitle>Monthly Availability - {instructorName}</DialogTitle>
             <div className="text-sm text-gray-600 space-y-1">
               <p>
-                Green: Available, Red: Unavailable, Blue dot: Special override
+                Red: Available, Gray: Unavailable, Red dot: Special override
               </p>
               <p>Click to select days, double-click to edit specific day</p>
             </div>

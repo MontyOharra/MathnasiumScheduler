@@ -1,6 +1,13 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { List, Edit } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   getGradeLevels,
   processGradeLevelForStudent,
@@ -18,11 +25,11 @@ interface StudentTableRowProps {
 }
 
 const columnClasses = {
-  firstName: "w-[15%]",
-  lastName: "w-[15%]",
-  grade: "w-[20%]",
-  session: "w-[30%]",
-  actions: "w-[20%]",
+  firstName: "w-[20%] min-w-[100px]",
+  lastName: "w-[20%] min-w-[100px]",
+  grade: "w-[20%] min-w-[120px]",
+  session: "w-[25%] min-w-[150px]",
+  actions: "w-[15%] min-w-[100px]",
 };
 
 export default function StudentTableRow({
@@ -73,12 +80,26 @@ export default function StudentTableRow({
       </TableCell>
       <TableCell className={`${columnClasses.actions} text-right`}>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={onViewSessions}>
-            View Sessions
-          </Button>
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            Edit
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" onClick={onViewSessions}>
+                <List className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>View session history</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" onClick={onEdit}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Edit</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </TableCell>
     </TableRow>

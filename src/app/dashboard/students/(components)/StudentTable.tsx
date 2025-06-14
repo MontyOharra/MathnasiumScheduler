@@ -8,6 +8,7 @@ import {
 import { Student } from "@/types/main";
 import dbService from "@/lib/db-service";
 import { Table, TableBody } from "@/components/ui/table";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import StudentTableRow from "./StudentTableRow";
 import StudentTableHeader, {
   SortField,
@@ -108,38 +109,40 @@ const StudentTable = forwardRef<StudentTableRef, StudentTableProps>(
     }
 
     return (
-      <div className="h-[calc(100vh-12rem)] flex flex-col border-3">
-        <div className="flex-none">
-          <StudentTableHeader currentSort={sort} onSort={handleSort} />
-        </div>
-        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-500">
-          <Table>
-            <TableBody>
-              {centerStudents.map((student) => (
-                <StudentTableRow
-                  key={student.id}
-                  studentId={student.id}
-                  firstName={student.firstName}
-                  lastName={student.lastName}
-                  gradeLevel={student.gradeLevelName}
-                  defaultSessionType={`${student.sessionTypeCode} (${student.sessionTypeLength} min)`}
-                  onEdit={() => handleEdit(student.id)}
-                  onViewSessions={() => handleViewSessions(student.id)}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+      <TooltipProvider>
+        <div className="h-[calc(100vh-12rem)] flex flex-col min-w-0 w-full">
+          <div className="flex-none min-w-0">
+            <StudentTableHeader currentSort={sort} onSort={handleSort} />
+          </div>
+          <div className="flex-1 min-w-0 overflow-auto scrollbar-modern">
+            <Table className="table-fixed-layout">
+              <TableBody>
+                {centerStudents.map((student) => (
+                  <StudentTableRow
+                    key={student.id}
+                    studentId={student.id}
+                    firstName={student.firstName}
+                    lastName={student.lastName}
+                    gradeLevel={student.gradeLevelName}
+                    defaultSessionType={`${student.sessionTypeCode} (${student.sessionTypeLength} min)`}
+                    onEdit={() => handleEdit(student.id)}
+                    onViewSessions={() => handleViewSessions(student.id)}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
-        {selectedStudentId && (
-          <StudentEditModal
-            studentId={selectedStudentId}
-            isOpen={isEditModalOpen}
-            onClose={handleEditModalClose}
-            onSave={handleEditModalSave}
-          />
-        )}
-      </div>
+          {selectedStudentId && (
+            <StudentEditModal
+              studentId={selectedStudentId}
+              isOpen={isEditModalOpen}
+              onClose={handleEditModalClose}
+              onSave={handleEditModalSave}
+            />
+          )}
+        </div>
+      </TooltipProvider>
     );
   }
 );

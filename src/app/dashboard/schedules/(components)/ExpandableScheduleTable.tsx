@@ -29,7 +29,7 @@ export default function ExpandableScheduleTable({
       <Button
         variant="ghost"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-4 bg-white rounded-t-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between p-4 bg-white rounded-t-lg border border-gray-200 hover:bg-red-50 transition-colors"
       >
         <h2 className="text-lg font-semibold text-red-500">{title}</h2>
         <ChevronDownIcon

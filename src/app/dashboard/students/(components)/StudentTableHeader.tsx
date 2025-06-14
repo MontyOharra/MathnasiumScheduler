@@ -14,11 +14,11 @@ interface StudentTableHeaderProps {
 }
 
 const columnClasses = {
-  firstName: "w-[15%]",
-  lastName: "w-[15%]",
-  grade: "w-[20%]",
-  session: "w-[30%]",
-  actions: "w-[20%]",
+  firstName: "w-[20%] min-w-[100px]",
+  lastName: "w-[20%] min-w-[100px]",
+  grade: "w-[20%] min-w-[120px]",
+  session: "w-[25%] min-w-[150px]",
+  actions: "w-[15%] min-w-[100px]",
 };
 
 export default function StudentTableHeader({
@@ -35,56 +35,58 @@ export default function StudentTableHeader({
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-background shadow-sm">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className={columnClasses.firstName}>
-              <Button
-                variant="ghost"
-                onClick={() => onSort("firstName")}
-                className="font-medium"
-              >
-                First Name
-                {getSortIcon("firstName")}
-              </Button>
-            </TableHead>
-            <TableHead className={columnClasses.lastName}>
-              <Button
-                variant="ghost"
-                onClick={() => onSort("lastName")}
-                className="font-medium"
-              >
-                Last Name
-                {getSortIcon("lastName")}
-              </Button>
-            </TableHead>
-            <TableHead className={columnClasses.grade}>
-              <Button
-                variant="ghost"
-                onClick={() => onSort("gradeLevel")}
-                className="font-medium"
-              >
-                Grade Level
-                {getSortIcon("gradeLevel")}
-              </Button>
-            </TableHead>
-            <TableHead className={columnClasses.session}>
-              <Button
-                variant="ghost"
-                onClick={() => onSort("sessionType")}
-                className="font-medium"
-              >
-                Default Session Type
-                {getSortIcon("sessionType")}
-              </Button>
-            </TableHead>
-            <TableHead className={`${columnClasses.actions} text-right`}>
-              Actions
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-      </Table>
+    <div className="sticky top-0 z-10 bg-background shadow-sm min-w-0 w-full">
+      <div className="overflow-x-auto scrollbar-modern-thin">
+        <Table className="table-fixed-layout">
+          <TableHeader>
+            <TableRow>
+              <TableHead className={columnClasses.firstName}>
+                <Button
+                  variant="ghost"
+                  onClick={() => onSort("firstName")}
+                  className="font-medium"
+                >
+                  First Name
+                  {getSortIcon("firstName")}
+                </Button>
+              </TableHead>
+              <TableHead className={columnClasses.lastName}>
+                <Button
+                  variant="ghost"
+                  onClick={() => onSort("lastName")}
+                  className="font-medium"
+                >
+                  Last Name
+                  {getSortIcon("lastName")}
+                </Button>
+              </TableHead>
+              <TableHead className={columnClasses.grade}>
+                <Button
+                  variant="ghost"
+                  onClick={() => onSort("gradeLevel")}
+                  className="font-medium"
+                >
+                  Grade Level
+                  {getSortIcon("gradeLevel")}
+                </Button>
+              </TableHead>
+              <TableHead className={columnClasses.session}>
+                <Button
+                  variant="ghost"
+                  onClick={() => onSort("sessionType")}
+                  className="font-medium"
+                >
+                  Default Session Type
+                  {getSortIcon("sessionType")}
+                </Button>
+              </TableHead>
+              <TableHead className={`${columnClasses.actions} text-right`}>
+                Actions
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+        </Table>
+      </div>
     </div>
   );
 }

@@ -152,7 +152,7 @@ export default function InstructorAddModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto scrollbar-modern">
           <DialogHeader>
             <DialogTitle>
               {showClassesSelection ? (
@@ -176,11 +176,11 @@ export default function InstructorAddModal({
           {showClassesSelection ? (
             // Classes Selection View
             <div className="grid gap-4 py-4">
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-modern-thin">
                 {gradeLevels.map((gradeLevel) => (
                   <div
                     key={gradeLevel.id}
-                    className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                    className="flex items-center space-x-2 p-2 hover:bg-red-50 rounded cursor-pointer"
                     onClick={() => {
                       const isCurrentlyChecked =
                         newInstructor.gradeLevelIds.includes(gradeLevel.id);
@@ -312,7 +312,7 @@ export default function InstructorAddModal({
                 <Label className="text-right">Classes Taught</Label>
                 <div
                   className={
-                    "col-span-3 p-3 border rounded-md cursor-pointer hover:bg-gray-50"
+                    "col-span-3 p-3 border rounded-md cursor-pointer hover:bg-red-50"
                   }
                   onClick={handleClassesTaughtClick}
                 >
@@ -358,13 +358,13 @@ export default function InstructorAddModal({
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">Weekly Availability</Label>
                 <div
-                  className="col-span-3 p-3 border rounded-md cursor-pointer hover:bg-gray-50"
+                  className="col-span-3 p-3 border rounded-md cursor-pointer hover:bg-red-50"
                   onClick={handleAvailabilityClick}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       {availabilityData.size > 0 ? (
-                        <span className="text-green-600 text-sm">
+                        <span className="text-red-600 text-sm">
                           {availabilityData.size} time slots configured
                         </span>
                       ) : (
@@ -385,7 +385,7 @@ export default function InstructorAddModal({
             </Button>
             <Button
               onClick={handleSave}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="btn-primary"
               disabled={
                 !newInstructor.firstName ||
                 !newInstructor.lastName ||
@@ -411,10 +411,7 @@ export default function InstructorAddModal({
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleConfirmSave}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
+            <Button onClick={handleConfirmSave} className="btn-primary">
               Confirm
             </Button>
           </DialogFooter>

@@ -357,7 +357,7 @@ export function Schedule({
           </button>
           <button
             onClick={handleImportClick}
-            className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
           >
             <Download size={16} />
             Import Sessions

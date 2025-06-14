@@ -82,7 +82,7 @@ export default function ImportScheduleSessionsModal({
             Cancel
           </button>
           <button
-            className="px-4 py-2 text-sm rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
             onClick={handleImport}
             disabled={!selectedFile || isLoading}
           >
