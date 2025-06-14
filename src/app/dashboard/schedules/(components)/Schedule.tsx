@@ -262,10 +262,44 @@ export function Schedule({
       // Populate cells sequentially
       const columnsPerTime = numPods * 3;
       const cellPromises: Promise<unknown>[] = [];
-      for (const [time, studentIds] of Object.entries(occupancy)) {
-        studentIds.forEach((sId, idx) => {
-          if (idx >= columnsPerTime) return; // ignore overflow
-          const columnNumber = idx + 1;
+
+      // Sort times so we process chronologically ("HH:mm" strings are zero-padded so lex sort works)
+      const sortedTimes = Object.keys(occupancy).sort();
+
+      const activeColumnByStudent = new Map<number, number>(); // persists between consecutive slots
+
+      for (const time of sortedTimes) {
+        const studentIds = occupancy[time];
+
+        const usedColumns = new Set<number>();
+
+        // First pass – place students that already have a column assignment
+        studentIds.forEach((sId) => {
+          const existing = activeColumnByStudent.get(sId);
+          if (existing !== undefined) {
+            usedColumns.add(existing);
+          }
+        });
+
+        // Helper to get first free column starting from 1
+        const nextFreeColumn = () => {
+          for (let c = 1; c <= columnsPerTime; c++) {
+            if (!usedColumns.has(c)) return c;
+          }
+          return undefined;
+        };
+
+        // Second pass – assign columns, preserving prior ones when possible
+        studentIds.forEach((sId) => {
+          let columnNumber = activeColumnByStudent.get(sId);
+          if (columnNumber === undefined) {
+            const freeCol = nextFreeColumn();
+            if (freeCol === undefined) return; // overflow – skip
+            columnNumber = freeCol;
+            activeColumnByStudent.set(sId, columnNumber);
+            usedColumns.add(columnNumber);
+          }
+
           const endTime = addMinutes(time, intervalLength);
           cellPromises.push(
             dbService.insertScheduleCell({
@@ -279,6 +313,15 @@ export function Schedule({
             })
           );
         });
+
+        // Remove students whose session does not continue into next slot
+        const stillActive = new Map<number, number>();
+        studentIds.forEach((sId) => {
+          const col = activeColumnByStudent.get(sId);
+          if (col !== undefined) stillActive.set(sId, col);
+        });
+        activeColumnByStudent.clear();
+        stillActive.forEach((col, sId) => activeColumnByStudent.set(sId, col));
       }
 
       await Promise.all(cellPromises);
