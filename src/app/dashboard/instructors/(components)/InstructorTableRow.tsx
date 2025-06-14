@@ -6,6 +6,7 @@ import {
   processGradeLevelsForInstructor,
   type GradeLevelWithBasic,
 } from "@/lib/grade-level-utils";
+import InstructorMonthlyAvailabilityModal from "./InstructorMonthlyAvailabilityModal";
 
 interface InstructorTableRowProps {
   instructorId: number;
@@ -26,6 +27,7 @@ const columnClasses = {
 };
 
 export default function InstructorTableRow({
+  instructorId,
   firstName,
   lastName,
   cellColor,
@@ -37,6 +39,7 @@ export default function InstructorTableRow({
     []
   );
   const [loading, setLoading] = useState(true);
+  const [showMonthlyAvailability, setShowMonthlyAvailability] = useState(false);
 
   useEffect(() => {
     const fetchGradeLevels = async () => {
@@ -58,44 +61,77 @@ export default function InstructorTableRow({
     : processGradeLevelsForInstructor(gradeLevels, allGradeLevels);
 
   return (
-    <TableRow>
-      <TableCell className={`${columnClasses.firstName} font-medium`}>
-        {firstName}
-      </TableCell>
-      <TableCell className={`${columnClasses.lastName} font-medium`}>
-        {lastName}
-      </TableCell>
-      <TableCell className={columnClasses.color}>
-        <div className="flex items-center gap-2">
-          <div
-            className="w-6 h-6 rounded border border-gray-300"
-            style={{ backgroundColor: cellColor }}
-          />
-          <span className="text-sm text-gray-600">{cellColor}</span>
-        </div>
-      </TableCell>
-      <TableCell className={columnClasses.gradeLevels}>
-        <div className="flex flex-wrap gap-1">
-          {processedGradeLevels.map((level: string, index: number) => (
-            <span
-              key={index}
-              className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md"
+    <>
+      <TableRow>
+        <TableCell className={`${columnClasses.firstName} font-medium`}>
+          {firstName}
+        </TableCell>
+        <TableCell className={`${columnClasses.lastName} font-medium`}>
+          {lastName}
+        </TableCell>
+        <TableCell className={columnClasses.color}>
+          <div className="flex items-center gap-2">
+            <div
+              className="w-6 h-6 rounded border border-gray-300"
+              style={{ backgroundColor: cellColor }}
+            />
+            <span className="text-sm text-gray-600">{cellColor}</span>
+          </div>
+        </TableCell>
+        <TableCell className={columnClasses.gradeLevels}>
+          <div className="flex flex-wrap gap-1">
+            {processedGradeLevels.map((level: string, index: number) => (
+              <span
+                key={index}
+                className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md"
+              >
+                {level}
+              </span>
+            ))}
+          </div>
+        </TableCell>
+        <TableCell className={`${columnClasses.actions} text-right`}>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMonthlyAvailability(true)}
             >
-              {level}
-            </span>
-          ))}
-        </div>
-      </TableCell>
-      <TableCell className={`${columnClasses.actions} text-right`}>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={onViewSchedule}>
-            View Schedule
-          </Button>
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            Edit
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
+              View Availability
+            </Button>
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              Edit
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+
+      {/* Monthly Availability Modal */}
+      {showMonthlyAvailability && (
+        <InstructorMonthlyAvailabilityModal
+          instructorId={instructorId}
+          instructorName={`${firstName} ${lastName}`}
+          isOpen={showMonthlyAvailability}
+          onClose={() => setShowMonthlyAvailability(false)}
+        />
+      )}
+    </>
   );
 }
+
+// Add the modal at the end - temporarily commented out until modal is created
+// export function InstructorTableRowWithModal(props: InstructorTableRowProps) {
+//   const [showMonthlyAvailability, setShowMonthlyAvailability] = useState(false);
+
+//   return (
+//     <>
+//       <InstructorTableRow {...props} />
+//       <InstructorMonthlyAvailabilityModal
+//         instructorId={props.instructorId}
+//         instructorName={`${props.firstName} ${props.lastName}`}
+//         isOpen={showMonthlyAvailability}
+//         onClose={() => setShowMonthlyAvailability(false)}
+//       />
+//     </>
+//   );
+// }

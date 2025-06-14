@@ -18,6 +18,8 @@ const {
   schedules,
   sessions,
   scheduleSessions,
+  instructorDefaultAvailability,
+  instructorSpecialAvailability,
 } = require("./db-test-data");
 const { scheduleCells } = require("./db-schedule-cells");
 
@@ -103,6 +105,28 @@ const createTables = (db) => {
       instructor_id INTEGER NOT NULL,
       grade_level_id INTEGER NOT NULL,
       PRIMARY KEY (instructor_id, grade_level_id)
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS instructor_default_availability (
+      instructor_id INTEGER NOT NULL,
+      weekday_id INTEGER NOT NULL,
+      is_available INTEGER NOT NULL DEFAULT 0,
+      start_time TEXT,
+      end_time TEXT,
+      PRIMARY KEY (instructor_id, weekday_id)
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS instructor_special_availability (
+      instructor_id INTEGER NOT NULL,
+      date DATE NOT NULL,
+      is_available INTEGER NOT NULL DEFAULT 0,
+      start_time TEXT,
+      end_time TEXT,
+      PRIMARY KEY (instructor_id, date)
     )
   `);
 
@@ -425,6 +449,34 @@ const populateTestData = (db) => {
       cell.time_start,
       cell.time_end,
       cell.column_number
+    );
+  });
+
+  // Insert instructor default availability
+  const insertDefaultAvailability = db.prepare(
+    "INSERT INTO instructor_default_availability (instructor_id, weekday_id, is_available, start_time, end_time) VALUES (?, ?, ?, ?, ?)"
+  );
+  instructorDefaultAvailability.forEach((availability) => {
+    insertDefaultAvailability.run(
+      availability.instructor_id,
+      availability.weekday_id,
+      availability.is_available,
+      availability.start_time,
+      availability.end_time
+    );
+  });
+
+  // Insert instructor special availability
+  const insertSpecialAvailability = db.prepare(
+    "INSERT INTO instructor_special_availability (instructor_id, date, is_available, start_time, end_time) VALUES (?, ?, ?, ?, ?)"
+  );
+  instructorSpecialAvailability.forEach((availability) => {
+    insertSpecialAvailability.run(
+      availability.instructor_id,
+      availability.date,
+      availability.is_available,
+      availability.start_time,
+      availability.end_time
     );
   });
 };

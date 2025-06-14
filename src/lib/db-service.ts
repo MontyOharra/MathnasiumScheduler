@@ -686,6 +686,227 @@ export class DatabaseService {
     this.handleError(result);
     return result.id as number;
   }
+
+  // Instructor Availability Methods
+
+  async getInstructorDefaultAvailability(instructorId: number): Promise<
+    Array<{
+      instructorId: number;
+      weekdayId: number;
+      weekdayName: string;
+      isAvailable: boolean;
+      startTime: string | null;
+      endTime: string | null;
+    }>
+  > {
+    this.checkElectron();
+    const results = await window.electron.database.customQuery(
+      `SELECT ida.instructor_id, ida.weekday_id, w.name as weekday_name, 
+              ida.is_available, ida.start_time, ida.end_time
+       FROM instructor_default_availability ida
+       JOIN weekday w ON ida.weekday_id = w.id
+       WHERE ida.instructor_id = ?
+       ORDER BY ida.weekday_id`,
+      [instructorId]
+    );
+    this.handleError(results);
+    return results.map((row: Record<string, unknown>) =>
+      snakeToCamel<{
+        instructorId: number;
+        weekdayId: number;
+        weekdayName: string;
+        isAvailable: boolean;
+        startTime: string | null;
+        endTime: string | null;
+      }>(row)
+    );
+  }
+
+  async setInstructorDefaultAvailability(
+    instructorId: number,
+    weekdayId: number,
+    availability: {
+      isAvailable: boolean;
+      startTime: string | null;
+      endTime: string | null;
+    }
+  ): Promise<void> {
+    this.checkElectron();
+
+    // Use INSERT OR REPLACE to handle both insert and update cases
+    const result = await window.electron.database.customQuery(
+      `INSERT OR REPLACE INTO instructor_default_availability 
+       (instructor_id, weekday_id, is_available, start_time, end_time) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        instructorId,
+        weekdayId,
+        availability.isAvailable ? 1 : 0,
+        availability.startTime,
+        availability.endTime,
+      ]
+    );
+    this.handleError(result);
+  }
+
+  async getInstructorSpecialAvailability(
+    instructorId: number,
+    startDate?: string,
+    endDate?: string
+  ): Promise<
+    Array<{
+      instructorId: number;
+      date: string;
+      isAvailable: boolean;
+      startTime: string | null;
+      endTime: string | null;
+    }>
+  > {
+    this.checkElectron();
+
+    let query = `SELECT instructor_id, date, is_available, start_time, end_time
+                 FROM instructor_special_availability
+                 WHERE instructor_id = ?`;
+    const params: unknown[] = [instructorId];
+
+    if (startDate && endDate) {
+      query += ` AND date BETWEEN ? AND ?`;
+      params.push(startDate, endDate);
+    } else if (startDate) {
+      query += ` AND date >= ?`;
+      params.push(startDate);
+    } else if (endDate) {
+      query += ` AND date <= ?`;
+      params.push(endDate);
+    }
+
+    query += ` ORDER BY date`;
+
+    const results = await window.electron.database.customQuery(query, params);
+    this.handleError(results);
+    return results.map((row: Record<string, unknown>) =>
+      snakeToCamel<{
+        instructorId: number;
+        date: string;
+        isAvailable: boolean;
+        startTime: string | null;
+        endTime: string | null;
+      }>(row)
+    );
+  }
+
+  async setInstructorSpecialAvailability(
+    instructorId: number,
+    date: string,
+    availability: {
+      isAvailable: boolean;
+      startTime: string | null;
+      endTime: string | null;
+    }
+  ): Promise<void> {
+    this.checkElectron();
+
+    const result = await window.electron.database.customQuery(
+      `INSERT OR REPLACE INTO instructor_special_availability 
+       (instructor_id, date, is_available, start_time, end_time) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        instructorId,
+        date,
+        availability.isAvailable ? 1 : 0,
+        availability.startTime,
+        availability.endTime,
+      ]
+    );
+    this.handleError(result);
+  }
+
+  async deleteInstructorSpecialAvailability(
+    instructorId: number,
+    date: string
+  ): Promise<void> {
+    this.checkElectron();
+
+    const result = await window.electron.database.customQuery(
+      `DELETE FROM instructor_special_availability 
+       WHERE instructor_id = ? AND date = ?`,
+      [instructorId, date]
+    );
+    this.handleError(result);
+  }
+
+  async getInstructorAvailabilityForDate(
+    instructorId: number,
+    date: string
+  ): Promise<{
+    isAvailable: boolean;
+    startTime: string | null;
+    endTime: string | null;
+    isSpecialOverride: boolean;
+  }> {
+    this.checkElectron();
+
+    // First check for special availability override
+    const specialResults = await window.electron.database.customQuery(
+      `SELECT is_available, start_time, end_time
+       FROM instructor_special_availability
+       WHERE instructor_id = ? AND date = ?`,
+      [instructorId, date]
+    );
+
+    if (specialResults.length > 0) {
+      const special = snakeToCamel<{
+        isAvailable: boolean;
+        startTime: string | null;
+        endTime: string | null;
+      }>(specialResults[0]);
+
+      return {
+        ...special,
+        isSpecialOverride: true,
+      };
+    }
+
+    // Fall back to default availability based on weekday
+    const weekdayResults = await window.electron.database.customQuery(
+      `SELECT ida.is_available, ida.start_time, ida.end_time
+       FROM instructor_default_availability ida
+       JOIN weekday w ON ida.weekday_id = w.id
+       WHERE ida.instructor_id = ? AND w.id = (
+         SELECT CASE strftime('%w', ?)
+           WHEN '0' THEN 1  -- Sunday
+           WHEN '1' THEN 2  -- Monday
+           WHEN '2' THEN 3  -- Tuesday
+           WHEN '3' THEN 4  -- Wednesday
+           WHEN '4' THEN 5  -- Thursday
+           WHEN '5' THEN 6  -- Friday
+           WHEN '6' THEN 7  -- Saturday
+         END
+       )`,
+      [instructorId, date]
+    );
+
+    if (weekdayResults.length > 0) {
+      const defaultAvail = snakeToCamel<{
+        isAvailable: boolean;
+        startTime: string | null;
+        endTime: string | null;
+      }>(weekdayResults[0]);
+
+      return {
+        ...defaultAvail,
+        isSpecialOverride: false,
+      };
+    }
+
+    // No availability data found - default to not available
+    return {
+      isAvailable: false,
+      startTime: null,
+      endTime: null,
+      isSpecialOverride: false,
+    };
+  }
 }
 
 // Export a singleton instance

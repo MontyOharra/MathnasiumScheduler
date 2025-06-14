@@ -795,6 +795,192 @@ const scheduleSessions = sessions.map((session) => ({
   session_id: session.id,
 }));
 
+// Sample default availability data for instructors
+const instructorDefaultAvailability = [
+  // John Doe (instructor_id: 1) - Available Mon-Fri 3:00-7:00 PM
+  {
+    instructor_id: 1,
+    weekday_id: 2,
+    is_available: 1,
+    start_time: "15:00",
+    end_time: "19:00",
+  }, // Monday
+  {
+    instructor_id: 1,
+    weekday_id: 3,
+    is_available: 1,
+    start_time: "15:00",
+    end_time: "19:00",
+  }, // Tuesday
+  {
+    instructor_id: 1,
+    weekday_id: 4,
+    is_available: 1,
+    start_time: "15:00",
+    end_time: "19:00",
+  }, // Wednesday
+  {
+    instructor_id: 1,
+    weekday_id: 5,
+    is_available: 1,
+    start_time: "15:00",
+    end_time: "19:00",
+  }, // Thursday
+  {
+    instructor_id: 1,
+    weekday_id: 6,
+    is_available: 1,
+    start_time: "15:00",
+    end_time: "19:00",
+  }, // Friday
+  {
+    instructor_id: 1,
+    weekday_id: 7,
+    is_available: 0,
+    start_time: null,
+    end_time: null,
+  }, // Saturday - not available
+  {
+    instructor_id: 1,
+    weekday_id: 1,
+    is_available: 0,
+    start_time: null,
+    end_time: null,
+  }, // Sunday - not available
+
+  // Jane Smith (instructor_id: 2) - Available Mon-Sat with different hours
+  {
+    instructor_id: 2,
+    weekday_id: 2,
+    is_available: 1,
+    start_time: "14:00",
+    end_time: "18:00",
+  }, // Monday
+  {
+    instructor_id: 2,
+    weekday_id: 3,
+    is_available: 1,
+    start_time: "14:00",
+    end_time: "18:00",
+  }, // Tuesday
+  {
+    instructor_id: 2,
+    weekday_id: 4,
+    is_available: 1,
+    start_time: "14:00",
+    end_time: "18:00",
+  }, // Wednesday
+  {
+    instructor_id: 2,
+    weekday_id: 5,
+    is_available: 1,
+    start_time: "14:00",
+    end_time: "18:00",
+  }, // Thursday
+  {
+    instructor_id: 2,
+    weekday_id: 6,
+    is_available: 1,
+    start_time: "14:00",
+    end_time: "18:00",
+  }, // Friday
+  {
+    instructor_id: 2,
+    weekday_id: 7,
+    is_available: 1,
+    start_time: "10:00",
+    end_time: "14:00",
+  }, // Saturday
+  {
+    instructor_id: 2,
+    weekday_id: 1,
+    is_available: 0,
+    start_time: null,
+    end_time: null,
+  }, // Sunday - not available
+
+  // Bob Johnson (instructor_id: 3) - Part-time, only Tue/Thu/Sat
+  {
+    instructor_id: 3,
+    weekday_id: 1,
+    is_available: 0,
+    start_time: null,
+    end_time: null,
+  }, // Sunday
+  {
+    instructor_id: 3,
+    weekday_id: 2,
+    is_available: 0,
+    start_time: null,
+    end_time: null,
+  }, // Monday
+  {
+    instructor_id: 3,
+    weekday_id: 3,
+    is_available: 1,
+    start_time: "16:00",
+    end_time: "20:00",
+  }, // Tuesday
+  {
+    instructor_id: 3,
+    weekday_id: 4,
+    is_available: 0,
+    start_time: null,
+    end_time: null,
+  }, // Wednesday
+  {
+    instructor_id: 3,
+    weekday_id: 5,
+    is_available: 1,
+    start_time: "16:00",
+    end_time: "20:00",
+  }, // Thursday
+  {
+    instructor_id: 3,
+    weekday_id: 6,
+    is_available: 0,
+    start_time: null,
+    end_time: null,
+  }, // Friday
+  {
+    instructor_id: 3,
+    weekday_id: 7,
+    is_available: 1,
+    start_time: "09:00",
+    end_time: "13:00",
+  }, // Saturday
+];
+
+// Sample special availability overrides
+const instructorSpecialAvailability = [
+  // John Doe has a special schedule on 2025-04-29 (Tuesday) - shorter hours
+  {
+    instructor_id: 1,
+    date: "2025-04-29",
+    is_available: 1,
+    start_time: "16:00",
+    end_time: "18:00",
+  },
+
+  // Jane Smith is not available on 2025-05-01 (Thursday) - special override
+  {
+    instructor_id: 2,
+    date: "2025-05-01",
+    is_available: 0,
+    start_time: null,
+    end_time: null,
+  },
+
+  // Bob Johnson has extended hours on 2025-05-02 (Friday) - normally not available
+  {
+    instructor_id: 3,
+    date: "2025-05-02",
+    is_available: 1,
+    start_time: "15:00",
+    end_time: "19:00",
+  },
+];
+
 module.exports = {
   center,
   adminUser,
@@ -807,4 +993,6 @@ module.exports = {
   schedules,
   sessions,
   scheduleSessions,
+  instructorDefaultAvailability,
+  instructorSpecialAvailability,
 };

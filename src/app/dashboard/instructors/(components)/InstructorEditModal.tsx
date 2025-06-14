@@ -18,6 +18,7 @@ import {
   type GradeLevelWithBasic,
 } from "@/lib/grade-level-utils";
 import dbService from "@/lib/db-service";
+import InstructorAvailabilityModal from "./InstructorAvailabilityModal";
 
 interface InstructorEditModalProps {
   instructorId: number;
@@ -44,9 +45,10 @@ export default function InstructorEditModal({
   onClose,
   onSave,
 }: InstructorEditModalProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const isEditing = true;
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showClassesSelection, setShowClassesSelection] = useState(false);
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [instructor, setInstructor] = useState<InstructorWithDetails | null>(
     null
   );
@@ -109,10 +111,6 @@ export default function InstructorEditModal({
       );
     }
   }, [isOpen, instructorId]);
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
 
   const handleSave = async () => {
     setShowConfirmDialog(true);
@@ -180,14 +178,12 @@ export default function InstructorEditModal({
             );
           }
 
-          setIsEditing(false);
           setShowConfirmDialog(false);
           setShowClassesSelection(false);
           onSave();
           onClose();
         } else {
           // No changes were made, just close the modal
-          setIsEditing(false);
           setShowConfirmDialog(false);
           setShowClassesSelection(false);
           onClose();
@@ -201,8 +197,8 @@ export default function InstructorEditModal({
   const handleCancel = () => {
     setShowConfirmDialog(false);
     setEditedInstructor(instructor || {});
-    setIsEditing(false);
     setShowClassesSelection(false);
+    onClose();
   };
 
   const handleGradeLevelChange = (gradeLevelId: number, checked: boolean) => {
@@ -249,8 +245,17 @@ export default function InstructorEditModal({
     );
   }
 
+  // Convert selected grade-level IDs to their corresponding names so the
+  // display logic matches the table row (which works with names / aliases).
+  const selectedGradeLevelIdentifiers = (
+    editedInstructor.gradeLevelIds || []
+  ).map((id) => {
+    const level = gradeLevels.find((gl) => gl.id === id);
+    return level ? level.name : String(id);
+  });
+
   const processedGradeLevels = processGradeLevelsForInstructor(
-    editedInstructor.gradeLevelIds?.map(String) || [],
+    selectedGradeLevelIdentifiers,
     gradeLevels
   );
 
@@ -310,10 +315,12 @@ export default function InstructorEditModal({
                           checked as boolean
                         )
                       }
+                      onClick={(e) => e.stopPropagation()}
                     />
                     <Label
                       htmlFor={`grade-${gradeLevel.id}`}
                       className="text-sm font-normal flex-1 cursor-pointer"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {gradeLevel.name}
                     </Label>
@@ -337,7 +344,7 @@ export default function InstructorEditModal({
                       firstName: e.target.value,
                     })
                   }
-                  disabled={!isEditing}
+                  disabled={false}
                   className="col-span-3"
                 />
               </div>
@@ -354,7 +361,7 @@ export default function InstructorEditModal({
                       lastName: e.target.value,
                     })
                   }
-                  disabled={!isEditing}
+                  disabled={false}
                   className="col-span-3"
                 />
               </div>
@@ -372,7 +379,7 @@ export default function InstructorEditModal({
                       email: e.target.value,
                     })
                   }
-                  disabled={!isEditing}
+                  disabled={false}
                   className="col-span-3"
                 />
               </div>
@@ -390,7 +397,7 @@ export default function InstructorEditModal({
                       phoneNumber: e.target.value,
                     })
                   }
-                  disabled={!isEditing}
+                  disabled={false}
                   className="col-span-3"
                 />
               </div>
@@ -411,7 +418,7 @@ export default function InstructorEditModal({
                           cellColor: e.target.value,
                         })
                       }
-                      disabled={!isEditing}
+                      disabled={false}
                       className="w-20 h-8 p-1 border rounded"
                     />
                     <span className="text-sm text-gray-600">
@@ -423,9 +430,7 @@ export default function InstructorEditModal({
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">Classes Taught</Label>
                 <div
-                  className={`col-span-3 p-3 border rounded-md ${
-                    isEditing ? "cursor-pointer hover:bg-gray-50" : ""
-                  }`}
+                  className={`col-span-3 p-3 border rounded-md ${"cursor-pointer hover:bg-gray-50"}`}
                   onClick={handleClassesTaughtClick}
                 >
                   <div className="flex items-center justify-between">
@@ -466,34 +471,48 @@ export default function InstructorEditModal({
                         isActive: checked,
                       })
                     }
-                    disabled={!isEditing}
+                    disabled={false}
                   />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Weekly Availability</Label>
+                <div
+                  className="col-span-3 p-3 border rounded-md cursor-pointer hover:bg-gray-50"
+                  onClick={() => {
+                    setShowAvailabilityModal(true);
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <span className="text-gray-500 text-sm">
+                        Configure weekly schedule
+                      </span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-gray-400 ml-2 flex-shrink-0" />
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
           <DialogFooter>
-            {isEditing ? (
-              <>
-                <Button variant="outline" onClick={handleCancel}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  disabled={
-                    !editedInstructor.firstName ||
-                    !editedInstructor.lastName ||
-                    !editedInstructor.email
-                  }
-                >
-                  Save Changes
-                </Button>
-              </>
-            ) : (
-              <Button onClick={handleEdit}>Edit</Button>
-            )}
+            <>
+              <Button variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={
+                  !editedInstructor.firstName ||
+                  !editedInstructor.lastName ||
+                  !editedInstructor.email
+                }
+              >
+                Save Changes
+              </Button>
+            </>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -513,13 +532,26 @@ export default function InstructorEditModal({
             </Button>
             <Button
               onClick={handleConfirmSave}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InstructorAvailabilityModal
+        instructorId={instructorId}
+        instructorName={
+          instructor ? `${instructor.firstName} ${instructor.lastName}` : ""
+        }
+        isOpen={showAvailabilityModal}
+        onClose={() => setShowAvailabilityModal(false)}
+        onSave={() => {
+          // Optionally refresh instructor data or show success message
+          console.log("Availability saved successfully");
+        }}
+      />
     </>
   );
 }

@@ -82,6 +82,26 @@ This document serves as a reference for the database schema used in the Mathnasi
 | `instructor_id`  | INTEGER | Foreign key to instructor.id  |
 | `grade_level_id` | INTEGER | Foreign key to grade_level.id |
 
+### Table: `instructor_default_availability`
+
+| Column          | Type    | Description                                        |
+| --------------- | ------- | -------------------------------------------------- |
+| `instructor_id` | INTEGER | Foreign key to instructor.id                       |
+| `weekday_id`    | INTEGER | Foreign key to weekday.id                          |
+| `is_available`  | INTEGER | Whether instructor is available (0 or 1)           |
+| `start_time`    | TEXT    | Start time in HH:MM format (NULL if not available) |
+| `end_time`      | TEXT    | End time in HH:MM format (NULL if not available)   |
+
+### Table: `instructor_special_availability`
+
+| Column          | Type    | Description                                        |
+| --------------- | ------- | -------------------------------------------------- |
+| `instructor_id` | INTEGER | Foreign key to instructor.id                       |
+| `date`          | DATE    | Specific date in YYYY-MM-DD format                 |
+| `is_available`  | INTEGER | Whether instructor is available (0 or 1)           |
+| `start_time`    | TEXT    | Start time in HH:MM format (NULL if not available) |
+| `end_time`      | TEXT    | End time in HH:MM format (NULL if not available)   |
+
 ### Table: `student`
 
 | Column                    | Type    | Description                                     |
@@ -229,6 +249,24 @@ CREATE TABLE IF NOT EXISTS instructor_grade_level (
   instructor_id INTEGER NOT NULL,
   grade_level_id INTEGER NOT NULL,
   PRIMARY KEY (instructor_id, grade_level_id)
+);
+
+CREATE TABLE IF NOT EXISTS instructor_default_availability (
+  instructor_id INTEGER NOT NULL,
+  weekday_id INTEGER NOT NULL,
+  is_available INTEGER NOT NULL,
+  start_time TEXT,
+  end_time TEXT,
+  PRIMARY KEY (instructor_id, weekday_id)
+);
+
+CREATE TABLE IF NOT EXISTS instructor_special_availability (
+  instructor_id INTEGER NOT NULL,
+  date DATE NOT NULL,
+  is_available INTEGER NOT NULL,
+  start_time TEXT,
+  end_time TEXT,
+  PRIMARY KEY (instructor_id, date)
 );
 
 CREATE TABLE IF NOT EXISTS student (
