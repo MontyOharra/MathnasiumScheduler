@@ -635,34 +635,9 @@ export default function InstructorAvailabilityModal({
 
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-auto max-h-96 custom-scrollbar"
+          className="flex-1 overflow-auto max-h-96 scrollbar-modern"
           onMouseUp={handleMouseUp}
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "#9CA3AF #F3F4F6",
-          }}
         >
-          <style
-            dangerouslySetInnerHTML={{
-              __html: `
-              .custom-scrollbar::-webkit-scrollbar {
-                width: 8px;
-              }
-              .custom-scrollbar::-webkit-scrollbar-track {
-                background: #F3F4F6;
-                border-radius: 4px;
-              }
-              .custom-scrollbar::-webkit-scrollbar-thumb {
-                background: #9CA3AF;
-                border-radius: 4px;
-                transition: background-color 0.2s ease;
-              }
-              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                background: #6B7280;
-              }
-            `,
-            }}
-          />
           <div className="grid grid-cols-8 min-w-max">
             {/* Header row */}
             <div className="p-1 text-center font-medium text-xs bg-gray-50 border-b border-r border-gray-300 sticky top-0 z-10">
@@ -712,7 +687,7 @@ export default function InstructorAvailabilityModal({
                         ${
                           isSelected
                             ? "bg-red-500 hover:bg-red-600"
-                            : "bg-white hover:bg-gray-100"
+                            : "bg-white hover:bg-red-50"
                         }
                       `}
                       onMouseDown={() =>
@@ -733,10 +708,7 @@ export default function InstructorAvailabilityModal({
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button
-            onClick={handleSave}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
+          <Button onClick={handleSave} className="btn-primary">
             Save Availability
           </Button>
         </DialogFooter>

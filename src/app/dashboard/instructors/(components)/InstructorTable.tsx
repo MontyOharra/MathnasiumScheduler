@@ -7,6 +7,7 @@ import {
 } from "react";
 import { Instructor } from "@/types/main";
 import { Table, TableBody } from "@/components/ui/table";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import InstructorTableRow from "./InstructorTableRow";
 import InstructorTableHeader, {
   SortField,
@@ -151,38 +152,40 @@ const InstructorTable = forwardRef<InstructorTableRef, InstructorTableProps>(
     }
 
     return (
-      <div className="h-[calc(100vh-12rem)] flex flex-col border-3">
-        <div className="flex-none">
-          <InstructorTableHeader currentSort={sort} onSort={handleSort} />
-        </div>
-        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-500">
-          <Table>
-            <TableBody>
-              {centerInstructors.map((instructor) => (
-                <InstructorTableRow
-                  key={instructor.id}
-                  instructorId={instructor.id}
-                  firstName={instructor.firstName}
-                  lastName={instructor.lastName}
-                  cellColor={instructor.cellColor}
-                  gradeLevels={instructor.gradeLevels}
-                  onEdit={() => handleEdit(instructor.id)}
-                  onViewSchedule={() => handleViewSchedule(instructor.id)}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+      <TooltipProvider>
+        <div className="h-[calc(100vh-12rem)] flex flex-col min-w-0 w-full">
+          <div className="flex-none min-w-0">
+            <InstructorTableHeader currentSort={sort} onSort={handleSort} />
+          </div>
+          <div className="flex-1 min-w-0 overflow-auto scrollbar-modern">
+            <Table className="table-fixed-layout">
+              <TableBody>
+                {centerInstructors.map((instructor) => (
+                  <InstructorTableRow
+                    key={instructor.id}
+                    instructorId={instructor.id}
+                    firstName={instructor.firstName}
+                    lastName={instructor.lastName}
+                    cellColor={instructor.cellColor}
+                    gradeLevels={instructor.gradeLevels}
+                    onEdit={() => handleEdit(instructor.id)}
+                    onViewSchedule={() => handleViewSchedule(instructor.id)}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
-        {selectedInstructorId && (
-          <InstructorEditModal
-            instructorId={selectedInstructorId}
-            isOpen={isEditModalOpen}
-            onClose={handleEditModalClose}
-            onSave={handleEditModalSave}
-          />
-        )}
-      </div>
+          {selectedInstructorId && (
+            <InstructorEditModal
+              instructorId={selectedInstructorId}
+              isOpen={isEditModalOpen}
+              onClose={handleEditModalClose}
+              onSave={handleEditModalSave}
+            />
+          )}
+        </div>
+      </TooltipProvider>
     );
   }
 );

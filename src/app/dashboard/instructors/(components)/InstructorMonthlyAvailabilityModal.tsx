@@ -279,7 +279,7 @@ export default function InstructorMonthlyAvailabilityModal({
         if (!isCurrentMonth) {
           dayClasses += "text-gray-400 bg-gray-100 border-gray-100 ";
         } else if (isSelected) {
-          dayClasses += "bg-blue-500 text-white ";
+          dayClasses += "bg-red-500 text-white ";
         } else if (dayAvailability?.isAvailable) {
           dayClasses += "bg-white text-gray-900 hover:bg-gray-50 ";
         } else {

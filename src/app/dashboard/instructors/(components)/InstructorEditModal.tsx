@@ -262,7 +262,7 @@ export default function InstructorEditModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto scrollbar-modern">
           <DialogHeader>
             <DialogTitle>
               {showClassesSelection ? (
@@ -286,11 +286,11 @@ export default function InstructorEditModal({
           {showClassesSelection ? (
             // Classes Selection View
             <div className="grid gap-4 py-4">
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-modern-thin">
                 {gradeLevels.map((gradeLevel) => (
                   <div
                     key={gradeLevel.id}
-                    className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                    className="flex items-center space-x-2 p-2 hover:bg-red-50 rounded cursor-pointer"
                     onClick={() => {
                       const isCurrentlyChecked =
                         editedInstructor.gradeLevelIds?.includes(
@@ -430,7 +430,7 @@ export default function InstructorEditModal({
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">Classes Taught</Label>
                 <div
-                  className={`col-span-3 p-3 border rounded-md ${"cursor-pointer hover:bg-gray-50"}`}
+                  className={`col-span-3 p-3 border rounded-md ${"cursor-pointer hover:bg-red-50"}`}
                   onClick={handleClassesTaughtClick}
                 >
                   <div className="flex items-center justify-between">
@@ -478,7 +478,7 @@ export default function InstructorEditModal({
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">Weekly Availability</Label>
                 <div
-                  className="col-span-3 p-3 border rounded-md cursor-pointer hover:bg-gray-50"
+                  className="col-span-3 p-3 border rounded-md cursor-pointer hover:bg-red-50"
                   onClick={() => {
                     setShowAvailabilityModal(true);
                   }}

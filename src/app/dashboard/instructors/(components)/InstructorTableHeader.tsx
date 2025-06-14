@@ -14,11 +14,11 @@ interface InstructorTableHeaderProps {
 }
 
 const columnClasses = {
-  firstName: "w-[20%]",
-  lastName: "w-[20%]",
-  color: "w-[15%]",
-  gradeLevels: "w-[25%]",
-  actions: "w-[20%]",
+  firstName: "w-[20%] min-w-[100px]",
+  lastName: "w-[20%] min-w-[100px]",
+  color: "w-[15%] min-w-[120px]",
+  gradeLevels: "w-[30%] min-w-[150px]",
+  actions: "w-[15%] min-w-[100px]",
 };
 
 export default function InstructorTableHeader({
@@ -35,42 +35,44 @@ export default function InstructorTableHeader({
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-background shadow-sm">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className={columnClasses.firstName}>
-              <Button
-                variant="ghost"
-                onClick={() => onSort("firstName")}
-                className="font-medium"
-              >
-                First Name
-                {getSortIcon("firstName")}
-              </Button>
-            </TableHead>
-            <TableHead className={columnClasses.lastName}>
-              <Button
-                variant="ghost"
-                onClick={() => onSort("lastName")}
-                className="font-medium"
-              >
-                Last Name
-                {getSortIcon("lastName")}
-              </Button>
-            </TableHead>
-            <TableHead className={columnClasses.color}>
-              Assignment Color
-            </TableHead>
-            <TableHead className={columnClasses.gradeLevels}>
-              Grade Levels Taught
-            </TableHead>
-            <TableHead className={`${columnClasses.actions} text-right`}>
-              Actions
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-      </Table>
+    <div className="sticky top-0 z-10 bg-background shadow-sm min-w-0 w-full">
+      <div className="overflow-x-auto scrollbar-modern-thin">
+        <Table className="table-fixed-layout">
+          <TableHeader>
+            <TableRow>
+              <TableHead className={columnClasses.firstName}>
+                <Button
+                  variant="ghost"
+                  onClick={() => onSort("firstName")}
+                  className="font-medium"
+                >
+                  First Name
+                  {getSortIcon("firstName")}
+                </Button>
+              </TableHead>
+              <TableHead className={columnClasses.lastName}>
+                <Button
+                  variant="ghost"
+                  onClick={() => onSort("lastName")}
+                  className="font-medium"
+                >
+                  Last Name
+                  {getSortIcon("lastName")}
+                </Button>
+              </TableHead>
+              <TableHead className={columnClasses.color}>
+                Assignment Color
+              </TableHead>
+              <TableHead className={columnClasses.gradeLevels}>
+                Grade Levels Taught
+              </TableHead>
+              <TableHead className={`${columnClasses.actions} text-right`}>
+                Actions
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+        </Table>
+      </div>
     </div>
   );
 }

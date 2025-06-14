@@ -51,18 +51,18 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.584 0.207 17.38);
+  --primary: oklch(0.55 0.22 25);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.584 0.207 17.38);
+  --secondary: oklch(0.97 0.02 25);
+  --secondary-foreground: oklch(0.55 0.22 25);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.56 0 0);
-  --accent: oklch(0.914 0.05 17.38);
-  --accent-foreground: oklch(0.584 0.207 17.38);
-  --destructive: oklch(0.577 0.245 27.325);
+  --accent: oklch(0.95 0.05 25);
+  --accent-foreground: oklch(0.55 0.22 25);
+  --destructive: oklch(0.55 0.22 25);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.584 0.207 17.38);
+  --ring: oklch(0.55 0.22 25);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -70,12 +70,32 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-primary: oklch(0.55 0.22 25);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.95 0.05 25);
+  --sidebar-accent-foreground: oklch(0.55 0.22 25);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Additional Red Theme Variables */
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --red-200: #fecaca;
+  --red-300: #fca5a5;
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-800: #991b1b;
+  --red-900: #7f1d1d;
+  --red-950: #450a0a;
+
+  /* Navigation specific */
+  --nav-active: var(--red-600);
+  --nav-active-border: var(--red-400);
+  --nav-hover: var(--red-100);
+  --nav-text: #6b7280;
+  --nav-text-active: white;
 }
 
 .dark {
@@ -116,26 +136,35 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  html,
   body {
     @apply bg-background text-foreground;
+    overflow: hidden; /* Prevent window-level scrolling */
+    height: 100%;
+  }
+
+  #__next {
+    height: 100%;
   }
 }
 
 /* Modern floating scrollbar styles */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  height: 12px;
+  width: 8px;
+  height: 8px;
   background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
   border-radius: 10px;
-  margin: 20px 8px 4px 8px;
+  margin: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -144,6 +173,7 @@
   border: 1px solid transparent;
   background-clip: content-box;
   transition: all 0.2s ease;
+  min-height: 20px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -156,7 +186,15 @@
   background-clip: content-box;
 }
 
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Dark mode scrollbar */
+.dark .custom-scrollbar {
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
   background-clip: content-box;
@@ -170,4 +208,232 @@
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:active {
   background: rgba(255, 255, 255, 0.7);
   background-clip: content-box;
+}
+
+/* Thin scrollbar variant */
+.custom-scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  background: transparent;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 8px;
+  margin: 2px;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  min-height: 16px;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark mode thin scrollbar */
+.dark .custom-scrollbar-thin {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.dark .custom-scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark .custom-scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Additional utility classes for red theme */
+@layer utilities {
+  .nav-item {
+    color: var(--nav-text);
+    transition: all 0.2s ease;
+  }
+
+  .nav-item:hover {
+    background-color: var(--nav-hover);
+    color: var(--foreground);
+  }
+
+  .nav-item.active {
+    background-color: var(--nav-active);
+    color: var(--nav-text-active);
+    border: 2px solid var(--nav-active-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Button utilities */
+  .btn-primary {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply bg-red-100 text-red-700 hover:bg-red-200 border border-red-300;
+  }
+
+  /* Hover utilities */
+  .hover-red:hover {
+    @apply bg-red-50;
+  }
+
+  /* Border utilities */
+  .border-red-accent {
+    @apply border-red-300;
+  }
+
+  /* Text utilities */
+  .text-red-primary {
+    @apply text-red-600;
+  }
+
+  /* Background utilities */
+  .bg-red-light {
+    @apply bg-red-50;
+  }
+
+  .bg-red-primary {
+    @apply bg-red-600;
+  }
+
+  /* Focus utilities */
+  .focus-red:focus {
+    @apply border-red-500 ring-2 ring-red-500/20;
+  }
+
+  /* Application minimum width */
+  .app-min-width {
+    min-width: 1024px; /* 1024px minimum width */
+  }
+
+  /* Responsive table utilities */
+  .table-fixed-layout {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  /* Flex container utilities */
+  .flex-no-shrink {
+    flex-shrink: 0;
+  }
+
+  .min-w-0 {
+    min-width: 0;
+  }
+
+  /* Scrollbar utilities */
+  .scrollbar-modern {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background: transparent;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+    margin: 4px;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background-clip: content-box;
+    transition: all 0.2s ease;
+    min-height: 20px;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.4);
+    background-clip: content-box;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  .scrollbar-modern-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  }
+
+  .scrollbar-modern-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+    background: transparent;
+  }
+
+  .scrollbar-modern-thin::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 8px;
+    margin: 2px;
+  }
+
+  .scrollbar-modern-thin::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    min-height: 16px;
+  }
+
+  .scrollbar-modern-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .scrollbar-modern-thin::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Dark mode scrollbar variants */
+  .dark .scrollbar-modern {
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+
+  .dark .scrollbar-modern::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    background-clip: content-box;
+  }
+
+  .dark .scrollbar-modern::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+    background-clip: content-box;
+  }
+
+  .dark .scrollbar-modern-thin {
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+
+  .dark .scrollbar-modern-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .scrollbar-modern-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
 }
