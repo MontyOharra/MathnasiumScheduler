@@ -5,7 +5,6 @@ import { Calendar, Edit } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
@@ -40,7 +39,6 @@ export default function InstructorTableRow({
   cellColor,
   gradeLevels,
   onEdit,
-  onViewSchedule,
 }: InstructorTableRowProps) {
   const [allGradeLevels, setAllGradeLevels] = useState<GradeLevelWithBasic[]>(
     []
@@ -90,7 +88,7 @@ export default function InstructorTableRow({
             {processedGradeLevels.map((level: string, index: number) => (
               <span
                 key={index}
-                className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md"
+                className="inline-block px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-md border border-red-200"
               >
                 {level}
               </span>

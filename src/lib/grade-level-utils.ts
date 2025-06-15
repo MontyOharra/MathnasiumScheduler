@@ -20,6 +20,41 @@ export async function getGradeLevels(): Promise<GradeLevelWithBasic[]> {
   return gradeLevels;
 }
 
+export function clearGradeLevelsCache(): void {
+  cachedGradeLevels = null;
+}
+
+export async function addGradeLevel(data: {
+  name: string;
+  alias: string;
+}): Promise<number> {
+  const dbService = DatabaseService.getInstance();
+  const id = await dbService.addGradeLevel({ ...data, is_basic: false });
+  clearGradeLevelsCache();
+  return id;
+}
+
+export async function updateGradeLevel(
+  id: number,
+  data: Partial<{ name: string; alias: string }>
+): Promise<boolean> {
+  const dbService = DatabaseService.getInstance();
+  const success = await dbService.updateGradeLevel(id, data);
+  if (success) {
+    clearGradeLevelsCache();
+  }
+  return success;
+}
+
+export async function deleteGradeLevel(id: number): Promise<boolean> {
+  const dbService = DatabaseService.getInstance();
+  const success = await dbService.deleteGradeLevel(id);
+  if (success) {
+    clearGradeLevelsCache();
+  }
+  return success;
+}
+
 export function processGradeLevelForStudent(
   gradeLevelName: string,
   gradeLevels: GradeLevelWithBasic[]

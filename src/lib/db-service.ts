@@ -427,6 +427,42 @@ export class DatabaseService {
     }));
   }
 
+  async addGradeLevel(data: {
+    name: string;
+    alias: string;
+    is_basic?: boolean;
+  }): Promise<number> {
+    this.checkElectron();
+    const result = await window.electron.database.insert("grade_level", {
+      name: data.name,
+      alias: data.alias,
+      is_basic: data.is_basic ? 1 : 0,
+    });
+    this.handleError(result);
+    return result.id as number;
+  }
+
+  async updateGradeLevel(
+    id: number,
+    data: Partial<{ name: string; alias: string }>
+  ): Promise<boolean> {
+    this.checkElectron();
+    const result = await window.electron.database.update(
+      "grade_level",
+      id,
+      data
+    );
+    this.handleError(result);
+    return result.changes > 0;
+  }
+
+  async deleteGradeLevel(id: number): Promise<boolean> {
+    this.checkElectron();
+    const result = await window.electron.database.delete("grade_level", id);
+    this.handleError(result);
+    return result.changes > 0;
+  }
+
   async getSessionTypes(): Promise<
     { id: number; code: string; length: number; sessionAlias: string }[]
   > {

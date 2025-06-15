@@ -130,6 +130,13 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Dark theme navigation overrides */
+  --nav-active: #dc2626; /* Keep red accent in dark mode */
+  --nav-active-border: #f87171;
+  --nav-hover: rgba(220, 38, 38, 0.1); /* Red tint for hover */
+  --nav-text: #d1d5db; /* Light gray text */
+  --nav-text-active: white;
 }
 
 @layer base {
@@ -435,5 +442,162 @@
 
   .dark .scrollbar-modern-thin::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Font Size Implementation */
+  .font-small {
+    --font-scale: 0.875; /* 87.5% of base size */
+  }
+
+  .font-small body,
+  .font-small .text-xs {
+    font-size: 0.625rem;
+  } /* 10px */
+  .font-small .text-sm {
+    font-size: 0.75rem;
+  } /* 12px */
+  .font-small .text-base {
+    font-size: 0.8125rem;
+  } /* 13px */
+  .font-small .text-lg {
+    font-size: 0.9375rem;
+  } /* 15px */
+  .font-small .text-xl {
+    font-size: 1rem;
+  } /* 16px */
+  .font-small .text-2xl {
+    font-size: 1.25rem;
+  } /* 20px */
+  .font-small .text-3xl {
+    font-size: 1.5rem;
+  } /* 24px */
+
+  .font-medium {
+    --font-scale: 1; /* Default size, no changes needed */
+  }
+
+  .font-large {
+    --font-scale: 1.125; /* 112.5% of base size */
+  }
+
+  .font-large body,
+  .font-large .text-xs {
+    font-size: 0.875rem;
+  } /* 14px */
+  .font-large .text-sm {
+    font-size: 1rem;
+  } /* 16px */
+  .font-large .text-base {
+    font-size: 1.125rem;
+  } /* 18px */
+  .font-large .text-lg {
+    font-size: 1.25rem;
+  } /* 20px */
+  .font-large .text-xl {
+    font-size: 1.5rem;
+  } /* 24px */
+  .font-large .text-2xl {
+    font-size: 1.875rem;
+  } /* 30px */
+  .font-large .text-3xl {
+    font-size: 2.25rem;
+  } /* 36px */
+
+  .font-extra-large {
+    --font-scale: 1.25; /* 125% of base size */
+  }
+
+  .font-extra-large body,
+  .font-extra-large .text-xs {
+    font-size: 1rem;
+  } /* 16px */
+  .font-extra-large .text-sm {
+    font-size: 1.125rem;
+  } /* 18px */
+  .font-extra-large .text-base {
+    font-size: 1.25rem;
+  } /* 20px */
+  .font-extra-large .text-lg {
+    font-size: 1.5rem;
+  } /* 24px */
+  .font-extra-large .text-xl {
+    font-size: 1.75rem;
+  } /* 28px */
+  .font-extra-large .text-2xl {
+    font-size: 2.25rem;
+  } /* 36px */
+  .font-extra-large .text-3xl {
+    font-size: 2.75rem;
+  } /* 44px */
+
+  /* Apply font scaling to common elements */
+  .font-small input,
+  .font-small select,
+  .font-small textarea,
+  .font-small button {
+    font-size: 0.8125rem; /* 13px */
+  }
+
+  .font-large input,
+  .font-large select,
+  .font-large textarea,
+  .font-large button {
+    font-size: 1.125rem; /* 18px */
+  }
+
+  .font-extra-large input,
+  .font-extra-large select,
+  .font-extra-large textarea,
+  .font-extra-large button {
+    font-size: 1.25rem; /* 20px */
+  }
+
+  /* Dark theme enhancements */
+  .dark .bg-white {
+    background-color: var(--card);
+    color: var(--card-foreground);
+  }
+
+  .dark .text-gray-900 {
+    color: var(--foreground);
+  }
+
+  .dark .text-gray-700 {
+    color: var(--muted-foreground);
+  }
+
+  .dark .text-gray-600 {
+    color: var(--muted-foreground);
+  }
+
+  .dark .text-gray-500 {
+    color: var(--muted-foreground);
+  }
+
+  .dark .border-gray-200 {
+    border-color: var(--border);
+  }
+
+  .dark .border-gray-300 {
+    border-color: var(--border);
+  }
+
+  .dark .bg-gray-50 {
+    background-color: var(--background);
+  }
+
+  .dark input,
+  .dark select,
+  .dark textarea {
+    background-color: var(--input);
+    border-color: var(--border);
+    color: var(--foreground);
+  }
+
+  .dark input:focus,
+  .dark select:focus,
+  .dark textarea:focus {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
   }
 }

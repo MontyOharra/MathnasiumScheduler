@@ -1,11 +1,12 @@
-'use client'
+"use client";
 
 import ElectronProvider from "@/components/ElectronProvider";
+import { AppearanceProvider } from "@/stores/AppearanceContext";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ElectronProvider>
-      {children}
+      <AppearanceProvider>{children}</AppearanceProvider>
     </ElectronProvider>
   );
 }
