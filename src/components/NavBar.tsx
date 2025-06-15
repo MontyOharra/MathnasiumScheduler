@@ -96,45 +96,21 @@ export default function NavBar() {
   return (
     <nav
       className={cn(
-        "flex flex-col h-full bg-background border-r border-border transition-all duration-300 ease-in-out select-none",
+        "flex flex-col h-full bg-background border-r border-border transition-all duration-300 ease-in-out select-none overflow-x-hidden",
         isExpanded ? "w-64" : "w-16"
       )}
     >
       {/* Header */}
-      <div className="flex h-16 items-center justify-between px-4 border-b border-border">
+      <div className="flex h-16 items-center px-4 border-b border-border overflow-x-hidden">
         {isExpanded && (
-          <h1 className="text-xl text-foreground font-semibold truncate select-none">
+          <h1 className="text-lg text-red-600 font-medium truncate select-none">
             Mathnasium Scheduler
           </h1>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleExpanded}
-          disabled={isAutoCollapsed}
-          className={cn(
-            "p-2 hover:bg-accent select-none transition-opacity",
-            isAutoCollapsed && "opacity-50 cursor-not-allowed"
-          )}
-          draggable={false}
-          title={
-            isAutoCollapsed
-              ? "Expand disabled - window too narrow"
-              : isExpanded
-              ? "Collapse sidebar"
-              : "Expand sidebar"
-          }
-        >
-          {isExpanded ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-        </Button>
       </div>
 
       {/* Navigation Items */}
-      <div className="flex-1 overflow-y-auto scrollbar-modern-thin py-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-modern-thin py-4">
         <div className="space-y-1 px-2">
           {navigation.map((item) => {
             const Icon = item.icon;
@@ -176,24 +152,47 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Footer - Optional branding when collapsed */}
-      {!isExpanded && (
-        <div className="p-4 border-t border-border">
-          <div className="flex justify-center">
-            {isAutoCollapsed ? (
-              <div className="flex flex-col items-center gap-1">
-                <Menu className="h-4 w-4 text-gray-400 select-none" />
-                <div
-                  className="w-2 h-2 bg-red-500 rounded-full animate-pulse"
-                  title="Auto-collapsed due to window size"
-                />
-              </div>
-            ) : (
-              <Menu className="h-5 w-5 text-gray-400 select-none" />
-            )}
-          </div>
+      {/* Footer with collapse button */}
+      <div className="p-4 border-t border-border overflow-x-hidden">
+        <div
+          className={cn("flex", isExpanded ? "justify-end" : "justify-center")}
+        >
+          {!isExpanded && isAutoCollapsed ? (
+            <div className="flex flex-col items-center gap-1">
+              <Menu className="h-4 w-4 text-gray-400 select-none" />
+              <div
+                className="w-2 h-2 bg-red-500 rounded-full animate-pulse"
+                title="Auto-collapsed due to window size"
+              />
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleExpanded}
+              disabled={isAutoCollapsed}
+              className={cn(
+                "p-2 hover:bg-accent select-none transition-opacity",
+                isAutoCollapsed && "opacity-50 cursor-not-allowed"
+              )}
+              draggable={false}
+              title={
+                isAutoCollapsed
+                  ? "Expand disabled - window too narrow"
+                  : isExpanded
+                  ? "Collapse sidebar"
+                  : "Expand sidebar"
+              }
+            >
+              {isExpanded ? (
+                <ChevronLeft className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </Button>
+          )}
         </div>
-      )}
+      </div>
     </nav>
   );
 }

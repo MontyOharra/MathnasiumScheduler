@@ -34,6 +34,92 @@ interface WeekdayAvailability {
   endTime: string | null;
 }
 
+interface DayCellProps {
+  dateStr: string;
+  currentCalendarDate: Date;
+  isCurrentMonth: boolean;
+  dayAvailability: DayAvailability | undefined;
+  isSelected: boolean;
+  onDateClick: (dateStr: string) => void;
+  onDateDoubleClick: (dateStr: string) => void;
+}
+
+function DayCell({
+  dateStr,
+  currentCalendarDate,
+  isCurrentMonth,
+  dayAvailability,
+  isSelected,
+  onDateClick,
+  onDateDoubleClick,
+}: DayCellProps) {
+  // Format availability times for display
+  const formatAvailabilityTimes = () => {
+    // Only show times if day is available and has valid times
+    if (
+      !dayAvailability ||
+      !dayAvailability.isAvailable ||
+      !dayAvailability.startTime ||
+      !dayAvailability.endTime
+    ) {
+      return null;
+    }
+
+    const formatTime = (time: string) => {
+      const [hours, minutes] = time.split(":").map(Number);
+      const period = hours >= 12 ? "PM" : "AM";
+      const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+      return `${displayHours}:${minutes.toString().padStart(2, "0")}${period}`;
+    };
+
+    return `${formatTime(dayAvailability.startTime)} - ${formatTime(
+      dayAvailability.endTime
+    )}`;
+  };
+
+  let dayClasses =
+    "h-16 border border-gray-200 cursor-pointer transition-colors text-xs relative p-1 ";
+
+  if (!isCurrentMonth) {
+    dayClasses += "bg-gray-200 text-gray-500 ";
+  } else if (isSelected) {
+    dayClasses += "bg-red-500 text-white ";
+  } else if (dayAvailability?.isAvailable) {
+    dayClasses += "bg-white text-gray-900 hover:bg-gray-50 ";
+  } else {
+    dayClasses += "text-gray-400 bg-gray-100 border-gray-100 ";
+  }
+
+  const timeDisplay = isCurrentMonth ? formatAvailabilityTimes() : null;
+
+  return (
+    <div
+      className={dayClasses}
+      onClick={() => isCurrentMonth && onDateClick(dateStr)}
+      onDoubleClick={() => isCurrentMonth && onDateDoubleClick(dateStr)}
+    >
+      {/* Date number in top-left */}
+      <span className="absolute top-1 left-1 font-medium">
+        {currentCalendarDate.getDate()}
+      </span>
+
+      {/* Special availability indicator */}
+      {dayAvailability?.hasSpecialAvailability && (
+        <div className="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full"></div>
+      )}
+
+      {/* Availability times in center */}
+      {timeDisplay && (
+        <div className="flex items-center justify-center h-full pt-3 text-center">
+          <span className="text-xs leading-tight font-medium">
+            {timeDisplay}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function InstructorMonthlyAvailabilityModal({
   instructorId,
   instructorName,
@@ -48,15 +134,20 @@ export default function InstructorMonthlyAvailabilityModal({
   const [defaultAvailability, setDefaultAvailability] = useState<
     WeekdayAvailability[]
   >([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDayEditModal, setShowDayEditModal] = useState(false);
   const [editingDate, setEditingDate] = useState<string | null>(null);
 
-  const fetchAvailabilityData = async () => {
+  const fetchAvailabilityData = async (isInitial = false) => {
     if (!isOpen || instructorId <= 0) return;
 
     try {
-      setIsLoading(true);
+      if (isInitial) {
+        setIsInitialLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
 
       // Fetch default weekly availability
       const defaultData = await dbService.getInstructorDefaultAvailability(
@@ -152,13 +243,25 @@ export default function InstructorMonthlyAvailabilityModal({
     } catch (error) {
       console.error("Error fetching availability data:", error);
     } finally {
-      setIsLoading(false);
+      if (isInitial) {
+        setIsInitialLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchAvailabilityData();
-  }, [isOpen, instructorId, currentDate]);
+    if (isOpen && instructorId > 0) {
+      fetchAvailabilityData(true);
+    }
+  }, [isOpen, instructorId]);
+
+  useEffect(() => {
+    if (isOpen && instructorId > 0 && !isInitialLoading) {
+      fetchAvailabilityData(false);
+    }
+  }, [currentDate]);
 
   const handlePreviousMonth = () => {
     setCurrentDate(
@@ -216,7 +319,7 @@ export default function InstructorMonthlyAvailabilityModal({
       }
 
       // Refresh data
-      await fetchAvailabilityData();
+      await fetchAvailabilityData(false);
       setSelectedDates(new Set());
     } catch (error) {
       console.error("Error updating availability:", error);
@@ -235,7 +338,7 @@ export default function InstructorMonthlyAvailabilityModal({
       }
 
       // Refresh data - revert to default availability
-      await fetchAvailabilityData();
+      await fetchAvailabilityData(false);
       setSelectedDates(new Set());
     } catch (error) {
       console.error("Error removing availability override:", error);
@@ -273,85 +376,17 @@ export default function InstructorMonthlyAvailabilityModal({
         const dayAvailability = dayAvailabilities.get(dateStr);
         const isSelected = selectedDates.has(dateStr);
 
-        let dayClasses =
-          "h-16 border border-gray-200 cursor-pointer transition-colors text-xs relative p-1 ";
-
-        if (!isCurrentMonth) {
-          dayClasses += "text-gray-400 bg-gray-100 border-gray-100 ";
-        } else if (isSelected) {
-          dayClasses += "bg-red-500 text-white ";
-        } else if (dayAvailability?.isAvailable) {
-          dayClasses += "bg-white text-gray-900 hover:bg-gray-50 ";
-        } else {
-          dayClasses += "bg-gray-200 text-gray-500 ";
-        }
-
-        // Format availability times for display
-        const formatAvailabilityTimes = (dateStr: string) => {
-          const dayAvail = dayAvailabilities.get(dateStr);
-
-          if (dayAvail?.isAvailable && dayAvail.startTime && dayAvail.endTime) {
-            const formatTime = (time: string) => {
-              // Validate time format before processing
-              if (!time || !time.includes(":")) {
-                return "";
-              }
-              const [hours, minutes] = time.split(":").map(Number);
-              // Validate parsed values
-              if (isNaN(hours) || isNaN(minutes)) {
-                return "";
-              }
-              const period = hours >= 12 ? "PM" : "AM";
-              const displayHours =
-                hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-              return `${displayHours}:${minutes
-                .toString()
-                .padStart(2, "0")}${period}`;
-            };
-
-            const startTimeFormatted = formatTime(dayAvail.startTime);
-            const endTimeFormatted = formatTime(dayAvail.endTime);
-
-            // Only return formatted string if both times are valid
-            if (startTimeFormatted && endTimeFormatted) {
-              return `${startTimeFormatted}-${endTimeFormatted}`;
-            }
-          }
-
-          return "";
-        };
-
         days.push(
-          <div
+          <DayCell
             key={dateStr}
-            className={dayClasses}
-            onClick={() => isCurrentMonth && handleDateClick(dateStr)}
-            onDoubleClick={() =>
-              isCurrentMonth && handleDateDoubleClick(dateStr)
-            }
-          >
-            {/* Date number in top-left */}
-            <span className="absolute top-1 left-1 font-medium">
-              {currentCalendarDate.getDate()}
-            </span>
-
-            {/* Special availability indicator */}
-            {dayAvailability?.hasSpecialAvailability && (
-              <div className="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full"></div>
-            )}
-
-            {/* Availability times in center - only show if truly available with valid times */}
-            {isCurrentMonth &&
-              dayAvailability?.isAvailable &&
-              dayAvailability.startTime &&
-              dayAvailability.endTime && (
-                <div className="flex items-center justify-center h-full pt-3 text-center">
-                  <span className="text-xs leading-tight">
-                    {formatAvailabilityTimes(dateStr)}
-                  </span>
-                </div>
-              )}
-          </div>
+            dateStr={dateStr}
+            currentCalendarDate={new Date(currentCalendarDate)}
+            isCurrentMonth={isCurrentMonth}
+            dayAvailability={dayAvailability}
+            isSelected={isSelected}
+            onDateClick={handleDateClick}
+            onDateDoubleClick={handleDateDoubleClick}
+          />
         );
 
         currentCalendarDate.setDate(currentCalendarDate.getDate() + 1);
@@ -361,7 +396,7 @@ export default function InstructorMonthlyAvailabilityModal({
     return days;
   };
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh]">
@@ -387,14 +422,24 @@ export default function InstructorMonthlyAvailabilityModal({
             </div>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 relative">
+            {/* Loading overlay for refreshes */}
+            {isRefreshing && (
+              <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+                <div className="bg-white rounded-lg shadow-lg p-4 flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                  <span className="text-sm text-gray-600">Updating...</span>
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleRemoveOverride}
-                disabled={selectedDates.size === 0}
+                disabled={selectedDates.size === 0 || isRefreshing}
               >
                 Remove Override
               </Button>
@@ -402,7 +447,7 @@ export default function InstructorMonthlyAvailabilityModal({
                 variant="outline"
                 size="sm"
                 onClick={handleMakeUnavailable}
-                disabled={selectedDates.size === 0}
+                disabled={selectedDates.size === 0 || isRefreshing}
               >
                 Make Unavailable
               </Button>
@@ -410,7 +455,12 @@ export default function InstructorMonthlyAvailabilityModal({
 
             {/* Month Navigation */}
             <div className="flex items-center justify-between">
-              <Button variant="outline" size="sm" onClick={handlePreviousMonth}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousMonth}
+                disabled={isRefreshing}
+              >
                 <ChevronLeft className="h-4 w-4" />
                 Previous
               </Button>
@@ -420,7 +470,12 @@ export default function InstructorMonthlyAvailabilityModal({
                   year: "numeric",
                 })}
               </h3>
-              <Button variant="outline" size="sm" onClick={handleNextMonth}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextMonth}
+                disabled={isRefreshing}
+              >
                 Next
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -470,8 +525,9 @@ export default function InstructorMonthlyAvailabilityModal({
           onSave={async () => {
             setShowDayEditModal(false);
             setEditingDate(null);
+            setSelectedDates(new Set()); // Clear highlighted cells
             // Refresh the monthly view by refetching data
-            await fetchAvailabilityData();
+            await fetchAvailabilityData(false);
           }}
           specificDate={editingDate}
         />
