@@ -477,6 +477,49 @@ export class DatabaseService {
     }));
   }
 
+  async addSessionType(data: {
+    code: string;
+    length: number;
+    sessionAlias: string;
+  }): Promise<number> {
+    this.checkElectron();
+    const result = await window.electron.database.insert("session_type", {
+      code: data.code,
+      length: data.length,
+      styling: "default", // Default styling
+      session_alias: data.sessionAlias,
+    });
+    this.handleError(result);
+    return result.id as number;
+  }
+
+  async updateSessionType(
+    id: number,
+    data: Partial<{ code: string; length: number; sessionAlias: string }>
+  ): Promise<boolean> {
+    this.checkElectron();
+    const updateData: Record<string, unknown> = {};
+    if (data.code !== undefined) updateData.code = data.code;
+    if (data.length !== undefined) updateData.length = data.length;
+    if (data.sessionAlias !== undefined)
+      updateData.session_alias = data.sessionAlias;
+
+    const result = await window.electron.database.update(
+      "session_type",
+      id,
+      updateData
+    );
+    this.handleError(result);
+    return result.changes > 0;
+  }
+
+  async deleteSessionType(id: number): Promise<boolean> {
+    this.checkElectron();
+    const result = await window.electron.database.delete("session_type", id);
+    this.handleError(result);
+    return result.changes > 0;
+  }
+
   async getWeekdayById(id: number): Promise<{ id: number; name: string }> {
     this.checkElectron();
     const result = await window.electron.database.getById("weekday", id);

@@ -11,11 +11,6 @@ const settingsNavigation = [
     description: "Customize the look and feel of your application",
   },
   {
-    name: "Scheduling",
-    href: "/dashboard/settings/scheduling",
-    description: "Configure scheduling preferences and rules",
-  },
-  {
     name: "Center Settings",
     href: "/dashboard/settings/center",
     description: "Manage center-specific configurations",
@@ -41,6 +36,7 @@ export default function SettingsLayout({
             {settingsNavigation.map((item) => {
               const isActive =
                 pathname === item.href ||
+                pathname.startsWith(item.href + "/") ||
                 (pathname === "/dashboard/settings" &&
                   item.href === "/dashboard/settings/appearance");
 
@@ -51,7 +47,7 @@ export default function SettingsLayout({
                   className={cn(
                     "pb-2 border-b-2 text-sm font-medium transition-colors duration-200",
                     isActive
-                      ? "border-red-500 text-red-600"
+                      ? "border-red-600 text-red-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   )}
                 >
@@ -64,7 +60,7 @@ export default function SettingsLayout({
       </div>
 
       {/* Settings Content */}
-      <div className="flex-1 overflow-auto">{children}</div>
+      <div className="flex-1 overflow-auto scrollbar-modern">{children}</div>
     </div>
   );
 }
